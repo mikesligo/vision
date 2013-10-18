@@ -6,25 +6,25 @@
 using namespace std;
 using namespace cv;
 
-/**
- * @function main
- */
+Mat load_image(int argc, char**argv)
+{
+    assert((argc == 2) && "Not enough arguments");
+    Mat image = imread(argv[1], CV_LOAD_IMAGE_COLOR);   // Read the file
+    assert((image.data) && "Could not open or find image");
+    return image;
+}
+
 int main( int argc, char** argv )
 {
-  Mat src, dst;
+  Mat src;
 
-  /// Load image
-  src = imread( argv[1], 1 );
+  cvtColor(load_image(argc, argv), src, CV_BGR2HSV);
 
-  if( !src.data )
-    { return -1; }
-
-  /// Separate the image in 3 places ( B, G and R )
   vector<Mat> bgr_planes;
   split( src, bgr_planes );
 
   /// Establish the number of bins
-  int histSize = 256;
+  int histSize = 8;
 
   /// Set the ranges ( for B,G,R) )
   float range[] = { 0, 256 } ;
