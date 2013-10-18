@@ -21,10 +21,10 @@ int main( int argc, char** argv )
   cvtColor(load_image(argc, argv), src, CV_BGR2HSV);
 
   vector<Mat> bgr_planes;
-  split( src, bgr_planes );
+  split( src , bgr_planes );
 
   /// Establish the number of bins
-  int histSize = 8;
+  int histSize = 256;
 
   /// Set the ranges ( for B,G,R) )
   float range[] = { 0, 256 } ;
@@ -40,7 +40,8 @@ int main( int argc, char** argv )
   calcHist( &bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
 
   // Draw the histograms for B, G and R
-  int hist_w = 512; int hist_h = 400;
+  int hist_w = 512; 
+  int hist_h = 400;
   int bin_w = cvRound( (double) hist_w/histSize );
 
   Mat histImage( hist_h, hist_w, CV_8UC3, Scalar( 0,0,0) );
@@ -53,20 +54,20 @@ int main( int argc, char** argv )
   /// Draw for each channel
   for( int i = 1; i < histSize; i++ )
   {
-      line( histImage, Point( bin_w*(i-1), hist_h - cvRound(b_hist.at<float>(i-1)) ) ,
+      /*line( histImage, Point( bin_w*(i-1), hist_h - cvRound(b_hist.at<float>(i-1)) ) ,
                        Point( bin_w*(i), hist_h - cvRound(b_hist.at<float>(i)) ),
                        Scalar( 255, 0, 0), 2, 8, 0  );
       line( histImage, Point( bin_w*(i-1), hist_h - cvRound(g_hist.at<float>(i-1)) ) ,
                        Point( bin_w*(i), hist_h - cvRound(g_hist.at<float>(i)) ),
-                       Scalar( 0, 255, 0), 2, 8, 0  );
+                       Scalar( 0, 255, 0), 2, 8, 0  );*/
       line( histImage, Point( bin_w*(i-1), hist_h - cvRound(r_hist.at<float>(i-1)) ) ,
                        Point( bin_w*(i), hist_h - cvRound(r_hist.at<float>(i)) ),
                        Scalar( 0, 0, 255), 2, 8, 0  );
   }
 
   /// Display
-  namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
-  imshow("calcHist Demo", histImage );
+  namedWindow(argv[1], CV_WINDOW_AUTOSIZE );
+  imshow(argv[1], histImage );
 
   waitKey(0);
 
