@@ -1,7 +1,7 @@
-CC=clang++
-CFLAGS = `pkg-config --cflags opencv`
+CC=g++
+CFLAGS = `pkg-config --cflags opencv` -Wall -g
 LIBS = `pkg-config --libs opencv`
 SOURCES = lab1.cpp
 
 all: 
-	$(CC) $(CFLAGS) $(LIBS) $(SOURCES) -o lab1
+	$(CC) $(SOURCES) $(CFLAGS) $(LIBS)  -o lab1
