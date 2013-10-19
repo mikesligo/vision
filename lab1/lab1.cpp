@@ -18,7 +18,7 @@ Mat count_red_spoons(Mat image)
     for (int row = 0; row < hls.rows; row ++){
         for (int col = 0; col < hls.cols; col ++){
             int hue = hls.at<Vec3b>(row,col)[0];
-            if ( (hue  < 0 || hue >= 162) && hue != 165 ){
+            if (( hue  < 3 || hue >= 160) && hue !=0){
                 red_count ++;
             } else {
                 for (int channels = 0; channels < red_only.channels(); channels ++){
@@ -38,7 +38,7 @@ Mat count_red_spoons(Mat image)
 }
 
 Mat get_k_means(string filename, int clusterCount, int iterations){
-    Mat src = imread(filename, CV_LOAD_IMAGE_COLOR);   // Read the file
+    Mat src = imread(filename, CV_LOAD_IMAGE_COLOR);
     Mat samples(src.rows * src.cols, 3, CV_32F);
     for( int y = 0; y < src.rows; y++ ){
         for( int x = 0; x < src.cols; x++ ){
@@ -71,10 +71,14 @@ int main( int argc, char** argv )
     assert((argc >= 2) && "Not enough arguments");
     for (int i = 1; i < argc; i++){
         filename = argv[i];
-        k_means = get_k_means(filename,20,5);
+        k_means = get_k_means(filename,10,5);
         red_only = count_red_spoons(k_means);
         namedWindow("Spoons", CV_WINDOW_AUTOSIZE );
+        imshow("k_means", k_means );
+        moveWindow("k_means", 700, 0);
         imshow("Spoons", red_only );
+        moveWindow("Spoons", 700, 700);
+        imshow("original", imread(filename, CV_LOAD_IMAGE_COLOR));
         waitKey(0);
         //imshow("Spoons", k_means );
     }
