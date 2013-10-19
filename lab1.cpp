@@ -73,13 +73,33 @@ Mat calc_hist(Mat src)
 
 int main( int argc, char** argv )
 {
-    Mat src, histImage;
-
-    cvtColor(load_image(argc, argv), src, CV_BGR2HLS);
-    histImage = calc_hist(src);
+    Mat hls, histImage, original;
+    original = load_image(argc, argv);
+    cvtColor(original, hls, CV_BGR2HLS);
+    histImage = calc_hist(hls);
 
     namedWindow(argv[1], CV_WINDOW_AUTOSIZE );
-    imshow(argv[1], histImage );
+    //imshow(argv[1], histImage );
+
+    Mat red_only = load_image(argc, argv);
+
+    for (int row = 0; row < hls.rows; row ++){
+        for (int col = 0; col < hls.cols; col ++){
+            int hue = hls.at<Vec3b>(row,col)[0];
+            if ( hue  <= 7 || hue >= 162){
+                printf("Hue us %d\n",hue);
+                for (int channels = 0; channels < red_only.channels(); channels ++){
+                    red_only.at<Vec3b>(row,col)[channels] = 255;
+                }
+            } else {
+                for (int channels = 0; channels < red_only.channels(); channels ++){
+                    red_only.at<Vec3b>(row,col)[channels] = 0;
+                }
+            }
+        }
+    }
+    namedWindow(argv[1], CV_WINDOW_AUTOSIZE );
+    imshow(argv[1], red_only );
 
     waitKey(0);
 
