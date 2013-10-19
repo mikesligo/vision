@@ -28,7 +28,13 @@ Mat count_red_spoons(string filename)
             }
         }
     }
-    printf("Red count is %d\n",red_count);
+    if (red_count < 500){
+        printf("No spoons found!\tRed count is %d\n",red_count);
+    } else if (red_count < 10000){
+        printf("1 red spoon found!\tRed count is %d\n",red_count);
+    } else {
+        printf("2 red spoons found!\tRed count is %d\n",red_count);
+    }
     return red_only;
 }
 
@@ -41,8 +47,8 @@ int main( int argc, char** argv )
     for (int i = 1; i < argc; i++){
         filename = argv[i];
         red_only = count_red_spoons(filename);
-        namedWindow(filename, CV_WINDOW_AUTOSIZE );
-        imshow(filename, red_only );
+        namedWindow("Spoons", CV_WINDOW_AUTOSIZE );
+        imshow("Spoons", red_only );
         waitKey(0);
     }
     return 0;
