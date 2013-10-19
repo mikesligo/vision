@@ -86,8 +86,8 @@ int main( int argc, char** argv )
     for (int row = 0; row < hls.rows; row ++){
         for (int col = 0; col < hls.cols; col ++){
             int hue = hls.at<Vec3b>(row,col)[0];
-            if ( hue  <= 7 || hue >= 162){
-                printf("Hue us %d\n",hue);
+            if ( (hue  <= 7 || hue >= 162) && hue != 0 && hue != 165){
+                ////printf("Hue us %d\n",hue);
                 for (int channels = 0; channels < red_only.channels(); channels ++){
                     red_only.at<Vec3b>(row,col)[channels] = 255;
                 }
