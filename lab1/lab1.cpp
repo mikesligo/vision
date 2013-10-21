@@ -9,9 +9,7 @@ using namespace cv;
 Mat count_red_spoons(Mat image)
 {
     Mat hls, histImage;
-
     cvtColor(image, hls, CV_BGR2HLS);
-
     Mat red_only = image.clone();
 
     int red_count = 0;
