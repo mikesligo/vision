@@ -18,7 +18,8 @@ Mat count_red_spoons(Mat image)
     for (int row = 0; row < hls.rows; row ++){
         for (int col = 0; col < hls.cols; col ++){
             int hue = hls.at<Vec3b>(row,col)[0];
-            if (( hue  < 3 || hue >= 160) && hue !=0){
+            int saturation = hls.at<Vec3b>(row,col)[2];
+            if ( ((hue  <= 2 && hue >= 0) || hue >= 160) && (saturation >= 120 )){
                 red_count ++;
             } else {
                 for (int channels = 0; channels < red_only.channels(); channels ++){
@@ -29,7 +30,7 @@ Mat count_red_spoons(Mat image)
     }
     if (red_count < 500){
         printf("No spoons found!\tRed count is %d\n",red_count);
-    } else if (red_count < 10000){
+    } else if (red_count < 13000){
         printf("1 red spoon found!\tRed count is %d\n",red_count);
     } else {
         printf("2 red spoons found!\tRed count is %d\n",red_count);
@@ -48,8 +49,7 @@ Mat get_k_means(string filename, int clusterCount, int iterations){
         }
     }
 
-    Mat labels;
-    Mat centers;
+    Mat labels, centers;
     kmeans(samples, clusterCount, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 10000, 0.0001), iterations, KMEANS_PP_CENTERS, centers );
 
     Mat new_image( src.size(), src.type() );
@@ -66,19 +66,20 @@ Mat get_k_means(string filename, int clusterCount, int iterations){
 
 int main( int argc, char** argv )
 {
-    Mat red_only, k_means;
+    Mat red_only, image;
     string filename;
     assert((argc >= 2) && "Not enough arguments");
     for (int i = 1; i < argc; i++){
         filename = argv[i];
-        k_means = get_k_means(filename,10,5);
-        red_only = count_red_spoons(k_means);
+        image = imread(filename, CV_LOAD_IMAGE_COLOR);
+        red_only = count_red_spoons(image);
+
+        namedWindow("Original", CV_WINDOW_AUTOSIZE );
         namedWindow("Spoons", CV_WINDOW_AUTOSIZE );
-        imshow("k_means", k_means );
-        moveWindow("k_means", 700, 0);
-        imshow("Spoons", red_only );
+        moveWindow("Original", 700, 0);
         moveWindow("Spoons", 700, 700);
-        imshow("original", imread(filename, CV_LOAD_IMAGE_COLOR));
+        imshow("Original", image );
+        imshow("Spoons", red_only );
         waitKey(0);
         //imshow("Spoons", k_means );
     }
