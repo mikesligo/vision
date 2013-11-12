@@ -15,8 +15,10 @@ vector<Mat> get_bottles(Mat image)
     Mat cropped = image(roi);
     int divider = cropped.cols/5;
     for (int i=0; i< cropped.cols-1; i = i + divider){
+        Mat grey_scale;
         Rect bottle_pos(i, 0, divider, cropped.rows);
-        bottles.push_back(cropped(bottle_pos));
+        cvtColor(cropped(bottle_pos), grey_scale, CV_BGR2GRAY);
+        bottles.push_back(grey_scale);
     }
     return bottles;
 }
@@ -31,13 +33,12 @@ int main( int argc, char** argv )
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
         vector<Mat> bottles = get_bottles(image);
         namedWindow("Lab2", CV_WINDOW_AUTOSIZE );
+        moveWindow("Lab2", 500, 300);
         for (vector<Mat>::iterator it = bottles.begin(); it != bottles.end(); it++) {
             image = Mat(*it);
             imshow("Lab2", image );
-            moveWindow("Lab2", 300, 300);
+            waitKey(0);
         }
-        waitKey(0);
-        //cvtColor(cropped, grey_scale, CV_BGR2GRAY);
     }
     return 0;
 
