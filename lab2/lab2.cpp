@@ -44,9 +44,26 @@ vector<Mat> get_bottles(Mat image)
         Mat grey_scale, k_means, section;
         Rect bottle_pos(i, 0, divider, cropped.rows);
         section = cropped(bottle_pos);
-        k_means = get_k_means(section,3,3);
-        cvtColor(k_means, grey_scale, CV_BGR2GRAY);
-        bottles.push_back(grey_scale);
+        k_means = get_k_means(section,6,8);
+        //cvtColor(k_means, grey_scale, CV_BGR2GRAY);
+        //convert to hls
+        //hls thresholding on luminance
+
+        Mat hls, varied_sat;
+        varied_sat = k_means.clone();
+        cvtColor(k_means, hls, CV_BGR2HLS);
+        for (int row = 0; row < hls.rows; row ++){
+            for (int col = 0; col < hls.cols; col ++){
+                int saturation = hls.at<Vec3b>(row,col)[2];
+                if ( saturation >= 50 ){
+                } else {
+                    for (int channels = 0; channels < varied_sat.channels(); channels ++){
+                        varied_sat.at<Vec3b>(row,col)[channels] = 0;
+                    }
+                }
+            }
+        }
+        bottles.push_back(varied_sat);
     }
     return bottles;
 }
