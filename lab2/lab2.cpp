@@ -33,6 +33,22 @@ Mat get_k_means(Mat image, int clusterCount, int iterations){
     return new_image;
 }
 
+Mat thresholdANDrgb (Mat thresholded, Mat rgb)
+{
+    Mat no_black = rgb.clone();
+    for (int row = 0; row < thresholded.rows; row ++){
+        for (int col = 0; col < thresholded.cols; col ++){
+            int grayness = thresholded.at<uchar>(row,col);
+            if ( grayness == 0){
+                for (int channels = 0; channels < no_black.channels(); channels ++){
+                    no_black.at<Vec3b>(row,col)[channels] = 0;
+                }
+            } 
+        }
+    }
+    return no_black;
+}
+
 // Split the image into interesting parts (bottom half, into 5 bottles) by using the known position of the bottles
 vector<Mat> get_bottles(Mat image)
 {
@@ -41,29 +57,17 @@ vector<Mat> get_bottles(Mat image)
     Mat cropped = image(roi);
     int divider = cropped.cols/5;
     for (int i=0; i< cropped.cols-1; i = i + divider){
-        Mat grey_scale, k_means, section;
+        Mat gray_scale, k_means, section, thresholded, just_bottle;
         Rect bottle_pos(i, 0, divider, cropped.rows);
         section = cropped(bottle_pos);
-        k_means = get_k_means(section,6,8);
-        //cvtColor(k_means, grey_scale, CV_BGR2GRAY);
-        //convert to hls
-        //hls thresholding on luminance
+        //k_means = get_k_means(section,6,8);
 
-        Mat hls, varied_sat;
-        varied_sat = k_means.clone();
-        cvtColor(k_means, hls, CV_BGR2HLS);
-        for (int row = 0; row < hls.rows; row ++){
-            for (int col = 0; col < hls.cols; col ++){
-                int saturation = hls.at<Vec3b>(row,col)[2];
-                if ( saturation >= 50 ){
-                } else {
-                    for (int channels = 0; channels < varied_sat.channels(); channels ++){
-                        varied_sat.at<Vec3b>(row,col)[channels] = 0;
-                    }
-                }
-            }
-        }
-        bottles.push_back(varied_sat);
+        // get just bottle
+        cvtColor(section, gray_scale, CV_BGR2GRAY);
+        adaptiveThreshold(gray_scale, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 151, 0);
+        just_bottle = thresholdANDrgb(thresholded, section);
+
+        bottles.push_back(just_bottle);
     }
     return bottles;
 }
