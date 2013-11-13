@@ -7,32 +7,6 @@
 using namespace std;
 using namespace cv;
 
-Mat get_k_means(Mat image, int clusterCount, int iterations){
-    Mat samples(image.rows * image.cols, 3, CV_32F);
-    for( int y = 0; y < image.rows; y++ ){
-        for( int x = 0; x < image.cols; x++ ){
-            for( int z = 0; z < 3; z++){
-                samples.at<float>(y + x*image.rows, z) = image.at<Vec3b>(y,x)[z];
-            }   
-        }   
-    }
-
-    Mat labels;
-    Mat centers;
-    kmeans(samples, clusterCount, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 10000, 0.0001), iterations, KMEANS_PP_CENTERS, centers );
-
-    Mat new_image( image.size(), image.type() );
-    for( int y = 0; y < image.rows; y++ ){
-        for( int x = 0; x < image.cols; x++ ){  
-            int cluster_idx = labels.at<int>(y + x*image.rows,0);
-            new_image.at<Vec3b>(y,x)[0] = centers.at<float>(cluster_idx, 0); 
-            new_image.at<Vec3b>(y,x)[1] = centers.at<float>(cluster_idx, 1); 
-            new_image.at<Vec3b>(y,x)[2] = centers.at<float>(cluster_idx, 2); 
-        }   
-    }
-    return new_image;
-}
-
 Mat thresholdANDrgb (Mat thresholded, Mat rgb)
 {
     Mat no_black = rgb.clone();
@@ -56,18 +30,19 @@ vector<Mat> get_bottles(Mat image)
     Rect roi(0,image.rows/2-1, image.cols, image.rows/2);
     Mat cropped = image(roi);
     int divider = cropped.cols/5;
-    for (int i=0; i< cropped.cols-1; i = i + divider){
+    for (int i=0; i< cropped.cols-cropped.cols%5; i = i + divider){
         Mat gray_scale, k_means, section, thresholded, just_bottle;
+
+        // isolate bottle
         Rect bottle_pos(i, 0, divider, cropped.rows);
         section = cropped(bottle_pos);
-        //k_means = get_k_means(section,6,8);
-
-        // get just bottle
+        
+        // remove background
         cvtColor(section, gray_scale, CV_BGR2GRAY);
         adaptiveThreshold(gray_scale, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 151, 0);
         just_bottle = thresholdANDrgb(thresholded, section);
 
-        bottles.push_back(just_bottle);
+        bottles.push_back(k_means);
     }
     return bottles;
 }
