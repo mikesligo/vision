@@ -31,7 +31,7 @@ vector<Mat> get_bottles(Mat image)
     Mat cropped = image(roi);
     int divider = cropped.cols/5;
     for (int i=0; i< cropped.cols-cropped.cols%5; i = i + divider){
-        Mat gray_scale, k_means, section, thresholded, just_bottle;
+        Mat gray_scale, k_means, section, thresholded, just_bottle, gray_bottle;
 
         // isolate bottle
         Rect bottle_pos(i, 0, divider, cropped.rows);
@@ -42,7 +42,19 @@ vector<Mat> get_bottles(Mat image)
         adaptiveThreshold(gray_scale, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 151, 0);
         just_bottle = thresholdANDrgb(thresholded, section);
 
-        bottles.push_back(k_means);
+        cvtColor(just_bottle, gray_bottle, CV_BGR2GRAY);
+
+        Mat horiz_deriv, vert_deriv;
+        Sobel(gray_bottle, horiz_deriv, CV_32F, 1, 0);
+        Sobel(gray_bottle, vert_deriv, CV_32F, 1, 0);
+
+        Mat horiz_deriv_abs, vert_deriv_abs;
+        convertScaleAbs(horiz_deriv, horiz_deriv_abs);
+        convertScaleAbs(vert_deriv, vert_deriv_abs);
+        Mat edge;
+        addWeighted(horiz_deriv_abs, 0.5, vert_deriv_abs, 0.5, 0, edge);
+
+        bottles.push_back(edge);
     }
     return bottles;
 }
