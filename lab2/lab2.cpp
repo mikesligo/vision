@@ -12,8 +12,8 @@ Mat thresholdANDrgb (Mat thresholded, Mat rgb)
     Mat no_black = rgb.clone();
     for (int row = 0; row < thresholded.rows; row ++){
         for (int col = 0; col < thresholded.cols; col ++){
-            int grayness = thresholded.at<uchar>(row,col);
-            if ( grayness == 0){
+            int greyness = thresholded.at<uchar>(row,col);
+            if ( greyness == 0){
                 for (int channels = 0; channels < no_black.channels(); channels ++){
                     no_black.at<Vec3b>(row,col)[channels] = 0;
                 }
@@ -21,6 +21,18 @@ Mat thresholdANDrgb (Mat thresholded, Mat rgb)
         }
     }
     return no_black;
+}
+
+void delete_white_border(Mat edge_image, int row, int col){
+    if (row < 2 || col < 2 || row > edge_image.rows-2 || col > edge_image.rows -2) return;
+    edge_image.at<uchar>(row, col) = 0;
+    for (int i = row-1; i < row+2; i++){
+        for (int j = col-1; j < col+2; j++){
+            if (edge_image.at<uchar>(i, j)){
+                delete_white_border(edge_image, i, j);
+            }
+        }
+    }
 }
 
 // Split the image into interesting parts (bottom half, into 5 bottles) by using the known position of the bottles
@@ -31,30 +43,31 @@ vector<Mat> get_bottles(Mat image)
     Mat cropped = image(roi);
     int divider = cropped.cols/5;
     for (int i=0; i< cropped.cols-cropped.cols%5; i = i + divider){
-        Mat gray_scale, k_means, section, thresholded, just_bottle, gray_bottle;
+        Mat grey_scale, k_means, section, thresholded, just_bottle, grey_bottle, canny;
 
         // isolate bottle
         Rect bottle_pos(i, 0, divider, cropped.rows);
         section = cropped(bottle_pos);
         
         // remove background
-        cvtColor(section, gray_scale, CV_BGR2GRAY);
-        adaptiveThreshold(gray_scale, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 151, 0);
+        cvtColor(section, grey_scale, CV_BGR2GRAY);
+        adaptiveThreshold(grey_scale, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 151, 0);
         just_bottle = thresholdANDrgb(thresholded, section);
+        
+        // get edges with canny 
+        cvtColor(just_bottle, grey_bottle, CV_BGR2GRAY);
+        Canny(grey_bottle, canny, 100, 200);
 
-        cvtColor(just_bottle, gray_bottle, CV_BGR2GRAY);
-
-        Mat horiz_deriv, vert_deriv;
-        Sobel(gray_bottle, horiz_deriv, CV_32F, 1, 0);
-        Sobel(gray_bottle, vert_deriv, CV_32F, 1, 0);
-
-        Mat horiz_deriv_abs, vert_deriv_abs;
-        convertScaleAbs(horiz_deriv, horiz_deriv_abs);
-        convertScaleAbs(vert_deriv, vert_deriv_abs);
-        Mat edge;
-        addWeighted(horiz_deriv_abs, 0.5, vert_deriv_abs, 0.5, 0, edge);
-
-        bottles.push_back(edge);
+        // Remove bottle edge recursively
+        bool pixel_is_white; 
+        for (int col = 0; col < canny.cols ; col ++){
+            pixel_is_white = (bool)canny.at<uchar>(canny.rows/2,col);
+            if (pixel_is_white) {
+                delete_white_border(canny, canny.rows/2, col);
+                break;
+            }
+        }
+        bottles.push_back(canny);
     }
     return bottles;
 }
