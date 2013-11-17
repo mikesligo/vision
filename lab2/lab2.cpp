@@ -69,16 +69,22 @@ vector<Mat> get_bottles(Mat image)
         }
 
         // Use hough to get lines
+        
+        vector<Vec2f> lines;
+        HoughLines(canny, lines, 1, CV_PI/180.0, 55);
 
-        //vector<Vec2f> lines;
-        //HoughLines(canny, lines, 1, CV_PI/200.0,60);
-
-        vector<Vec4i> lines;
-        HoughLinesP( canny, lines, 1, CV_PI/180, 45, 40, 30 );
+        // code from docs.opencv.org
         for( size_t i = 0; i < lines.size(); i++ )
         {
-            line( section, Point(lines[i][0], lines[i][1]),
-                    Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 2, 8 );
+            float rho = lines[i][0];
+            float theta = lines[i][1];
+            double a = cos(theta), b = sin(theta);
+            double x0 = a*rho, y0 = b*rho;
+            Point pt1(cvRound(x0 + 1000*(-b)),
+                    cvRound(y0 + 1000*(a)));
+            Point pt2(cvRound(x0 - 1000*(-b)),
+                    cvRound(y0 - 1000*(a)));
+            line( section, pt1, pt2, Scalar(0,0,255), 1, 8 );
         }
 
         bottles.push_back(section);
