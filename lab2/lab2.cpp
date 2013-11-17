@@ -67,7 +67,21 @@ vector<Mat> get_bottles(Mat image)
                 break;
             }
         }
-        bottles.push_back(canny);
+
+        // Use hough to get lines
+
+        //vector<Vec2f> lines;
+        //HoughLines(canny, lines, 1, CV_PI/200.0,60);
+
+        vector<Vec4i> lines;
+        HoughLinesP( canny, lines, 1, CV_PI/180, 45, 40, 30 );
+        for( size_t i = 0; i < lines.size(); i++ )
+        {
+            line( section, Point(lines[i][0], lines[i][1]),
+                    Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 2, 8 );
+        }
+
+        bottles.push_back(section);
     }
     return bottles;
 }
