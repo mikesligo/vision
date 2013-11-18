@@ -71,8 +71,10 @@ vector<Mat> get_bottles(Mat image)
         // Use hough to get lines
         
         vector<Vec2f> lines;
-        HoughLines(canny, lines, 1, CV_PI/180.0, 55);
-
+        HoughLines(canny, lines, 1, CV_PI/200.0, 50);
+        
+        Mat canny_bgr;
+        cvtColor(canny, canny_bgr, CV_GRAY2BGR);
         // code from docs.opencv.org
         for( size_t i = 0; i < lines.size(); i++ )
         {
@@ -84,10 +86,10 @@ vector<Mat> get_bottles(Mat image)
                     cvRound(y0 + 1000*(a)));
             Point pt2(cvRound(x0 - 1000*(-b)),
                     cvRound(y0 - 1000*(a)));
-            line( section, pt1, pt2, Scalar(0,0,255), 1, 8 );
+            line( canny_bgr, pt1, pt2, Scalar(0,0,255), 1, 8 );
         }
 
-        bottles.push_back(section);
+        bottles.push_back(canny_bgr);
     }
     return bottles;
 }
@@ -110,7 +112,4 @@ int main( int argc, char** argv )
         }
     }
     return 0;
-
-
-
 }
