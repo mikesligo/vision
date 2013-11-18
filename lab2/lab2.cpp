@@ -7,6 +7,7 @@
 using namespace std;
 using namespace cv;
 
+
 Mat thresholdANDrgb (Mat thresholded, Mat rgb)
 {
     Mat no_black = rgb.clone();
@@ -48,12 +49,12 @@ vector<Mat> get_bottles(Mat image)
         // isolate bottle
         Rect bottle_pos(i, 0, divider, cropped.rows);
         section = cropped(bottle_pos);
-        
+
         // remove background
         cvtColor(section, grey_scale, CV_BGR2GRAY);
         adaptiveThreshold(grey_scale, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 151, 0);
         just_bottle = thresholdANDrgb(thresholded, section);
-        
+
         // get edges with canny 
         cvtColor(just_bottle, grey_bottle, CV_BGR2GRAY);
         Canny(grey_bottle, canny, 100, 200);
@@ -61,35 +62,37 @@ vector<Mat> get_bottles(Mat image)
         // Remove bottle edge recursively
         bool pixel_is_white; 
         for (int col = 0; col < canny.cols ; col ++){
-            pixel_is_white = (bool)canny.at<uchar>(canny.rows/2,col);
+            pixel_is_white = (bool)canny.at<uchar>((int)canny.rows*0.7,col);
             if (pixel_is_white) {
-                delete_white_border(canny, canny.rows/2, col);
+                delete_white_border(canny,(int) canny.rows*0.7, col);
                 break;
             }
         }
 
         // Use hough to get lines
-        
+
         vector<Vec2f> lines;
-        HoughLines(canny, lines, 1, CV_PI/200.0, 50);
-        
+        HoughLines(canny, lines, 1, CV_PI/80.0, 50);
+
         Mat canny_bgr;
         cvtColor(canny, canny_bgr, CV_GRAY2BGR);
-        // code from docs.opencv.org
+
         for( size_t i = 0; i < lines.size(); i++ )
         {
             float rho = lines[i][0];
             float theta = lines[i][1];
             double a = cos(theta), b = sin(theta);
             double x0 = a*rho, y0 = b*rho;
-            Point pt1(cvRound(x0 + 1000*(-b)),
-                    cvRound(y0 + 1000*(a)));
-            Point pt2(cvRound(x0 - 1000*(-b)),
-                    cvRound(y0 - 1000*(a)));
-            line( canny_bgr, pt1, pt2, Scalar(0,0,255), 1, 8 );
+            Point pt1(cvRound(x0 + 1000*(-b)), cvRound(y0 + 1000*(a)));
+            Point pt2(cvRound(x0 - 1000*(-b)), cvRound(y0 - 1000*(a)));
+            // filter out the lines that angles don't match horiz or vertical ish, also only look for 1 horiz and 1 vert
+            printf ("pt1 %d\n",pt1.x);
+            line( section, pt1, pt2, Scalar(0,0,255), 1, 8 );
         }
+        imshow("Lab2", section );
+        waitKey(0);
 
-        bottles.push_back(canny_bgr);
+        //bottles.push_back(canny_bgr);
     }
     return bottles;
 }
@@ -99,17 +102,17 @@ int main( int argc, char** argv )
     Mat image;
     string filename;
     assert((argc >= 2) && "Not enough arguments");
+    namedWindow("Lab2", CV_WINDOW_AUTOSIZE );
+    moveWindow("Lab2", 500, 300);
     for (int i = 1; i < argc; i++){
         filename = argv[i];
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
         vector<Mat> bottles = get_bottles(image);
-        namedWindow("Lab2", CV_WINDOW_AUTOSIZE );
-        moveWindow("Lab2", 500, 300);
-        for (vector<Mat>::iterator it = bottles.begin(); it != bottles.end(); it++) {
-            image = Mat(*it);
-            imshow("Lab2", image );
-            waitKey(0);
-        }
+        //for (vector<Mat>::iterator it = bottles.begin(); it != bottles.end(); it++) {
+        //    image = Mat(*it);
+        //    imshow("Lab2", image );
+        //    waitKey(0);
+        //}
     }
     return 0;
 }
