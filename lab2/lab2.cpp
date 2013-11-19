@@ -110,8 +110,8 @@ vector<Mat> get_bottles(Mat image)
                 line( section, pt1, pt2, Scalar(0,0,255), 1, 8 );
             }
         }
-        if (found_vert && found_horiz) printf("Label found!\n");
-        else if (found_vert || found_horiz) printf("Label found but not well placed!\n");
+        if (found_vert && found_horiz) printf("Correct label found!\n");
+        else if (found_vert || found_horiz) printf("Label found but not placed correctly!\n");
         else {
             printf("Label not found!\n");
         }
