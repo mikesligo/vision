@@ -36,6 +36,17 @@ void delete_white_border(Mat edge_image, int row, int col){
     }
 }
 
+bool plusOrMinus(double val, double range, double error){
+    double Val = abs(val);
+    double Range = abs(range);
+    double Error = abs(error);
+    
+    double error_plus = Range + Error;
+    double error_minus = Range - Error;
+    if (Val < error_plus && Val > error_minus) return true;
+    return false;
+}
+
 // Split the image into interesting parts (bottom half, into 5 bottles) by using the known position of the bottles
 vector<Mat> get_bottles(Mat image)
 {
@@ -76,7 +87,9 @@ vector<Mat> get_bottles(Mat image)
 
         Mat canny_bgr;
         cvtColor(canny, canny_bgr, CV_GRAY2BGR);
-
+        
+        bool found_vert = false;
+        bool found_horiz = false;
         for( size_t i = 0; i < lines.size(); i++ )
         {
             float rho = lines[i][0];
@@ -85,12 +98,26 @@ vector<Mat> get_bottles(Mat image)
             double x0 = a*rho, y0 = b*rho;
             Point pt1(cvRound(x0 + 1000*(-b)), cvRound(y0 + 1000*(a)));
             Point pt2(cvRound(x0 - 1000*(-b)), cvRound(y0 - 1000*(a)));
+
             // filter out the lines that angles don't match horiz or vertical ish, also only look for 1 horiz and 1 vert
-            printf ("pt1 %d\n",pt1.x);
-            line( section, pt1, pt2, Scalar(0,0,255), 1, 8 );
+            double Angle = atan2(pt2.y - pt1.y,pt2.x - pt1.x) * 180.0 / CV_PI;
+            if(Angle<0) Angle=Angle+360;
+            if (plusOrMinus(Angle, 270.0, 3.0) ||plusOrMinus(Angle, 90.0, 3.0)) {
+                found_vert = true;
+                line( section, pt1, pt2, Scalar(0,0,255), 1, 8 );
+            } else if (plusOrMinus(Angle, 0.0, 3.0) ||plusOrMinus(Angle, 180.0, 3.0)) {
+                found_horiz = true;
+                line( section, pt1, pt2, Scalar(0,0,255), 1, 8 );
+            }
+        }
+        if (found_vert && found_horiz) printf("Label found!\n");
+        else if (found_vert || found_horiz) printf("Label found but not well placed!\n");
+        else {
+            printf("Label not found!\n");
         }
         imshow("Lab2", section );
         waitKey(0);
+        cout << endl;
 
         //bottles.push_back(canny_bgr);
     }
