@@ -48,7 +48,7 @@ bool plusOrMinus(double val, double range, double error){
 }
 
 // Split the image into interesting parts (bottom half, into 5 bottles) by using the known position of the bottles
-vector<Mat> get_bottles(Mat image)
+void classify_bottles(Mat image)
 {
     vector<Mat> bottles;
     Rect roi(0,image.rows/2-1, image.cols, image.rows/2);
@@ -79,7 +79,6 @@ vector<Mat> get_bottles(Mat image)
                 break;
             }
         }
-
         // Use hough to get lines
 
         vector<Vec2f> lines;
@@ -87,7 +86,7 @@ vector<Mat> get_bottles(Mat image)
 
         Mat canny_bgr;
         cvtColor(canny, canny_bgr, CV_GRAY2BGR);
-        
+
         bool found_vert = false;
         bool found_horiz = false;
         for( size_t i = 0; i < lines.size(); i++ )
@@ -117,11 +116,7 @@ vector<Mat> get_bottles(Mat image)
         }
         imshow("Lab2", section );
         waitKey(0);
-        cout << endl;
-
-        //bottles.push_back(canny_bgr);
     }
-    return bottles;
 }
 
 int main( int argc, char** argv )
@@ -134,12 +129,7 @@ int main( int argc, char** argv )
     for (int i = 1; i < argc; i++){
         filename = argv[i];
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
-        vector<Mat> bottles = get_bottles(image);
-        //for (vector<Mat>::iterator it = bottles.begin(); it != bottles.end(); it++) {
-        //    image = Mat(*it);
-        //    imshow("Lab2", image );
-        //    waitKey(0);
-        //}
+        classify_bottles(image);
     }
     return 0;
 }
