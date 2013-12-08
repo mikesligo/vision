@@ -1,1 +1,1 @@
-./exe bookview/BookView01.JPG
+./exe bookview/BookView*.JPG

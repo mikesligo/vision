@@ -28,11 +28,24 @@ Mat get_only_blue(Mat image){
     return only_blue;
 }
 
-Mat perspective_transformation(Mat image, Point2f * source, Point2f * dest){
-    Mat perspective_matrix, transformed;
+Mat perspective_transformation(Mat image){
 
-    perspective_matrix = getPerspectiveTransform(source, dest);
-    warpPerspective(image, transformed, perspective_matrix, transformed.size());
+    // apply standard transform
+    Mat affine_matrix, transformed;
+    Point2f src[3], dst[3];
+
+    //src[0] = Point2f(368,188);
+    src[0] = Point2f(1148,343);
+    src[1] = Point2f(543,530);
+    src[2] = Point2f(838,753);
+
+    //dst[0] = Point2f(8,8);
+    dst[0] = Point2f(398,8);
+    dst[1] = Point2f(8,589);
+    dst[2] = Point2f(398,589);
+    
+    affine_matrix = getAffineTransform(src, dst);
+    warpAffine(image, transformed, affine_matrix, transformed.size());
     return transformed;
 }
 
@@ -45,10 +58,10 @@ int main( int argc, char** argv )
     for (int i = 1; i < argc; i++){
         filename = argv[i];
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
-        only_blue = get_only_blue(image);
+        //only_blue = get_only_blue(image);
         //source = get_4_blue_dots(image);
-        //transformed = perspective_transformation(image);
-        imshow("Lab3", only_blue);
+        transformed = perspective_transformation(image);
+        imshow("Lab3", transformed);
         waitKey();
     }
     return 0;
