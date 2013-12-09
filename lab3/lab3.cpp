@@ -30,7 +30,6 @@ void delete_pixel_and_neighbours(Mat& binary, int x, int y){
 }
 
 void remove_large_clusters(Mat binary, int radius){
-
     for (int i = radius; i < binary.rows - radius-1; i++){
         for (int j = radius; j < binary.cols-radius; j++){
             bool left, right, top, bottom;
@@ -38,9 +37,6 @@ void remove_large_clusters(Mat binary, int radius){
             right = binary.at<uchar>(i+radius, j);
             top = binary.at<uchar>(i, j-radius);
             bottom = binary.at<uchar>(i, j+radius);
-            if (left && right && top && bottom){
-                printf("Cluster found at %d, %d\n", i, j);
-            }
             if (left && right && top && bottom){
                 delete_pixel_and_neighbours(binary, i, j);
             }
@@ -59,7 +55,7 @@ Mat get_border_dots(Mat image){
             int hue = hls.at<Vec3b>(row,col)[0];
             int lum = hls.at<Vec3b>(row,col)[1];
             int sat = hls.at<Vec3b>(row,col)[2];
-            if ( hue  <= 110 && hue >= 90 && sat >= 150 && lum <= 160){
+            if ( hue  <= 110 && hue >= 90 && sat >= 100 && lum <= 160){
             } else {
                 for (int channels = 0; channels < only_blue.channels(); channels ++){
                     only_blue.at<Vec3b>(row,col)[channels] = 0;
@@ -95,16 +91,17 @@ Mat get_border_rectangle(Mat dots){
     return binary;
 }
 
-Mat perspective_transformation(Mat image){
+Mat perspective_transformation(Mat image, Point2f * src){
 
     // apply standard transform
     Mat affine_matrix, transformed;
-    Point2f src[3], dst[3];
+    //Point2f src[3];
+    Point2f dst[3];
 
     //src[0] = Point2f(368,188);
-    src[0] = Point2f(1148,343);
-    src[1] = Point2f(543,530);
-    src[2] = Point2f(838,753);
+    //src[0] = Point2f(1148,343);
+    //src[1] = Point2f(543,530);
+    //src[2] = Point2f(838,753);
 
     //dst[0] = Point2f(8,8);
     dst[0] = Point2f(398,8);
@@ -114,6 +111,56 @@ Mat perspective_transformation(Mat image){
     affine_matrix = getAffineTransform(src, dst);
     warpAffine(image, transformed, affine_matrix, transformed.size());
     return transformed;
+}
+
+Point2f get_left_point(Mat binary){
+    for (int i=300; i < binary.cols; i++){
+        for (int j=0; j < binary.rows; j++){
+            if (binary.at<uchar>(j, i)) {
+                printf("Left - X: %d, Y:%d\n", j,i);
+                return Point2f(j,i);
+            }
+        }
+    }
+}
+
+Point2f get_bottom_point(Mat binary){
+    for (int i= binary.rows-200; i > 0; i--){
+        for (int j=0; j < binary.cols; j++){
+            if (binary.at<uchar>(i, j)) {
+                printf("Bottom - X: %d, Y:%d\n", i,j);
+                return Point2f(i, j);
+            }
+        }
+    }
+}
+
+Point2f get_right_point(Mat binary){
+    for (int i=binary.cols-200; i >= 0; i--){
+        for (int j=0; j < binary.rows; j++){
+            // if a cluster
+            if (binary.at<uchar>(j, i)) {
+                printf("Right - X: %d, Y:%d\n", j,i);
+                circle(binary, Point2f(j,i), 10, CV_RGB(0,0,255), 0);
+                return Point2f(j,i);
+            }
+        }
+    }
+}
+
+Point2f * get_right_bottom_left(Mat binary){
+    // start on the left
+    Point2f * corners = (Point2f*)malloc(sizeof(Point2f)*3); 
+    corners[0] = get_right_point(binary);
+    corners[1] = get_left_point(binary);
+    corners[2]= get_bottom_point(binary);
+    return corners;
+    //  check that the next 2 clusters are roughly the standard distance away
+    // if not then the next cluster is the starter
+    // do the same for right and bot
+    namedWindow("lol", CV_WINDOW_AUTOSIZE );
+    imshow("lol", binary);
+    waitKey();
 }
 
 int main( int argc, char** argv )
@@ -127,11 +174,13 @@ int main( int argc, char** argv )
         cout << filename << endl;
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
         border_dots = get_border_dots(image);
-        houghed = get_border_rectangle(border_dots);
+        //houghed = get_border_rectangle(border_dots);
         //source = get_4_blue_dots(image);
         //        transformed = perspective_transformation(image);
-        imshow("Lab3", houghed);
-        waitKey();
+        Point2f * points = get_right_bottom_left(border_dots);
+        transformed = perspective_transformation(image, points);
+        //imshow("Lab3", transformed);
+        //waitKey();
     }
     return 0;
 }

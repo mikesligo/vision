@@ -16,10 +16,24 @@ lets try hough one more time
 working pretty well, a few really large cluster mess it up though, going to try an remove them, esp image 35, 36 +
 
 cluster deletion works
-
 #todo get points of intersection, bottom points are bottomright, rightmost are topright et
 
 erode all points down to 1 pixel
 
 min bottom length: 350
 min top length: 460
+
+get distance between points
+
+min-distance-between = 85
+
+min width into the photo = 300
+
+rows/cols is as you would expect, cols > rows
+
+right so doing blur and thresholding on the hough lines is interesting, going to see if we can use non-maxima surpression to get the line thinner
+another option might be starting again using edge detection and see how good we can get it
+
+OOOOH maybe use a corner detector on our output - nope
+
+could look for any 3 image points which are a certain proportion or width from each other
