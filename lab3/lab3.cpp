@@ -72,7 +72,7 @@ Mat get_border_dots(Mat image){
     //adaptiveThreshold(grey, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 3, 0);
     vector<Vec3f> circles;
 
-    remove_large_clusters(binary, 20);
+    remove_large_clusters(binary, 10);
     
     return binary;
 }
@@ -82,11 +82,11 @@ Mat get_border_rectangle(Mat dots){
     cvtColor(dots, coloured, CV_GRAY2BGR);
 
     vector<Vec4i> lines;
-    HoughLinesP( dots, lines, 2, CV_PI/200, 20, 300, 100 );
+    HoughLinesP( dots, lines, 2, CV_PI/200, 20, 250, 100 );
     for( size_t i = 0; i < lines.size(); i++ )
     {
         line( coloured, Point(lines[i][0], lines[i][1]),
-                Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
+                Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 1, 8 );
     }
     /* vector<Vec2f> lines;
        HoughLines(dots, lines, 1, CV_PI/60, 100, 0, 0 );
