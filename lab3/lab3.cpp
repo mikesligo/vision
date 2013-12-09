@@ -118,18 +118,18 @@ Point2f get_left_point(Mat binary){
         for (int j=0; j < binary.rows; j++){
             if (binary.at<uchar>(j, i)) {
                 printf("Left - X: %d, Y:%d\n", j,i);
-                return Point2f(j,i);
+                return Point2f(i,j);
             }
         }
     }
 }
 
 Point2f get_bottom_point(Mat binary){
-    for (int i= binary.rows-200; i > 0; i--){
+    for (int i= binary.rows-100; i > 0; i--){
         for (int j=0; j < binary.cols; j++){
             if (binary.at<uchar>(i, j)) {
                 printf("Bottom - X: %d, Y:%d\n", i,j);
-                return Point2f(i, j);
+                return Point2f(j, i);
             }
         }
     }
@@ -138,11 +138,9 @@ Point2f get_bottom_point(Mat binary){
 Point2f get_right_point(Mat binary){
     for (int i=binary.cols-200; i >= 0; i--){
         for (int j=0; j < binary.rows; j++){
-            // if a cluster
             if (binary.at<uchar>(j, i)) {
                 printf("Right - X: %d, Y:%d\n", j,i);
-                circle(binary, Point2f(j,i), 10, CV_RGB(0,0,255), 0);
-                return Point2f(j,i);
+                return Point2f(i,j);
             }
         }
     }
@@ -154,13 +152,17 @@ Point2f * get_right_bottom_left(Mat binary){
     corners[0] = get_right_point(binary);
     corners[1] = get_left_point(binary);
     corners[2]= get_bottom_point(binary);
-    return corners;
     //  check that the next 2 clusters are roughly the standard distance away
     // if not then the next cluster is the starter
     // do the same for right and bot
-    namedWindow("lol", CV_WINDOW_AUTOSIZE );
-    imshow("lol", binary);
+    Mat coloured;
+    cvtColor(binary, coloured, CV_GRAY2BGR);
+    circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
+    circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
+    circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
+    imshow("Lab3", coloured);
     waitKey();
+    return corners;
 }
 
 int main( int argc, char** argv )
