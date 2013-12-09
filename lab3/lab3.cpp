@@ -50,15 +50,16 @@ void remove_large_clusters(Mat binary, int radius){
 
 Mat get_border_dots(Mat image){
     Mat only_blue = image.clone();
-    Mat hls, grey, binary, no_clusters;
+    Mat hls, grey, binary, no_clusters, only_blue_bgr;
 
     cvtColor(image, hls, CV_BGR2HLS);
 
     for (int row = 0; row < hls.rows; row ++){
         for (int col = 0; col < hls.cols; col ++){
             int hue = hls.at<Vec3b>(row,col)[0];
+            int lum = hls.at<Vec3b>(row,col)[1];
             int sat = hls.at<Vec3b>(row,col)[2];
-            if ( hue  <= 110 && hue >= 90 && sat >= 100){
+            if ( hue  <= 106 && hue >= 95 && sat >= 150 && lum <= 160){
             } else {
                 for (int channels = 0; channels < only_blue.channels(); channels ++){
                     only_blue.at<Vec3b>(row,col)[channels] = 0;
@@ -66,13 +67,13 @@ Mat get_border_dots(Mat image){
             }
         }
     }
-    cvtColor(only_blue, grey, CV_BGR2GRAY);
-    GaussianBlur( grey, grey, Size(9, 9), 2, 2 );
+    cvtColor(only_blue, only_blue_bgr, CV_HLS2BGR);
+    cvtColor(only_blue_bgr, grey, CV_BGR2GRAY);
+    //GaussianBlur( grey, grey, Size(9, 9), 2, 2 );
     threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
     //adaptiveThreshold(grey, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 3, 0);
-    vector<Vec3f> circles;
 
-    remove_large_clusters(binary, 10);
+    //remove_large_clusters(binary, 10);
     
     return binary;
 }
@@ -81,29 +82,17 @@ Mat get_border_rectangle(Mat dots){
     Mat coloured;
     cvtColor(dots, coloured, CV_GRAY2BGR);
 
-    vector<Vec4i> lines;
-    HoughLinesP( dots, lines, 2, CV_PI/200, 20, 250, 100 );
-    for( size_t i = 0; i < lines.size(); i++ )
+    vector<Vec4i> lines_short, lines_long;
+    HoughLinesP( dots, lines_short, 1, CV_PI/200, 5, 300, 100 );
+    HoughLinesP( dots, lines_long, 1, CV_PI/200, 5, 460, 100 );
+    for( size_t i = 0; i < lines_short.size(); i++ )
     {
-        line( coloured, Point(lines[i][0], lines[i][1]),
-                Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 1, 8 );
+        line( coloured, Point(lines_short[i][0], lines_short[i][1]), Point(lines_short[i][2], lines_short[i][3]), Scalar(0,0,255), 1, 8 );
     }
-    /* vector<Vec2f> lines;
-       HoughLines(dots, lines, 1, CV_PI/60, 100, 0, 0 );
-
-       for( size_t i = 0; i < lines.size(); i++ )
-       {
-       float rho = lines[i][0], theta = lines[i][1];
-       Point pt1, pt2;
-       double a = cos(theta), b = sin(theta);
-       double x0 = a*rho, y0 = b*rho;
-       pt1.x = cvRound(x0 + 1000*(-b));
-       pt1.y = cvRound(y0 + 1000*(a));
-       pt2.x = cvRound(x0 - 1000*(-b));
-       pt2.y = cvRound(y0 - 1000*(a));
-       line( coloured, pt1, pt2, Scalar(0,0,255), 3, CV_AA);
-       }
-       */
+    for( size_t i = 0; i < lines_long.size(); i++ )
+    {
+        line( coloured, Point(lines_long[i][0], lines_long[i][1]), Point(lines_long[i][2], lines_long[i][3]), Scalar(0,0,255), 1, 8 );
+    }
     return coloured;
 }
 

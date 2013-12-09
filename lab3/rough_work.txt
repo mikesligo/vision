@@ -14,3 +14,12 @@ I could find all the clusters of white in the image and mark them as dots. Then 
 lets try hough one more time
 
 working pretty well, a few really large cluster mess it up though, going to try an remove them, esp image 35, 36 +
+
+cluster deletion works
+
+#todo get points of intersection, bottom points are bottomright, rightmost are topright et
+
+erode all points down to 1 pixel
+
+min bottom length: 350
+min top length: 460
