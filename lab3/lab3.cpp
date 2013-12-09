@@ -8,7 +8,7 @@ using namespace std;
 using namespace cv;
 
 bool in_image_bounds(Mat& image, int x, int y){
-    return (x >= 0 && x <= image.cols && y >= 0 && y <= image.rows);
+    return (x >= 0 && x <= image.rows && y >= 0 && y <= image.cols);
 }
 
 void delete_pixel_and_neighbours(Mat& binary, int x, int y){
@@ -31,8 +31,8 @@ void delete_pixel_and_neighbours(Mat& binary, int x, int y){
 
 void remove_large_clusters(Mat binary, int radius){
 
-    for (int i = radius; i < binary.cols - radius; i++){
-        for (int j = radius; j < binary.rows-radius; j++){
+    for (int i = radius; i < binary.rows - radius-1; i++){
+        for (int j = radius; j < binary.cols-radius; j++){
             bool left, right, top, bottom;
             left = binary.at<uchar>(i-radius, j);
             right = binary.at<uchar>(i+radius, j);
