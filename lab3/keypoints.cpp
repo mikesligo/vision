@@ -1,8 +1,29 @@
+#include <stdio.h>
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/highgui/highgui.hpp"
 
-int main( int argc, char** argv ){
+using namespace std;
+using namespace cv;
 
-    Mat img1 = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
-    Mat img2 = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
+static void help()
+{
+    printf("\nThis program demonstrates using features2d detector, descriptor extractor and simple matcher\n"
+            "Using the SURF desriptor:\n"
+            "\n"
+            "Usage:\n matcher_simple <image1> <image2>\n");
+}
+
+int main(int argc, char** argv)
+{
+    if(argc != 3)
+    {
+        help();
+        return -1;
+    }
+
+    Mat img1 = imread(argv[1], IMREAD_GRAYSCALE);
+    Mat img2 = imread(argv[2], IMREAD_GRAYSCALE);
     if(img1.empty() || img2.empty())
     {
         printf("Can't read one of the images\n");
@@ -22,7 +43,7 @@ int main( int argc, char** argv ){
     extractor.compute(img2, keypoints2, descriptors2);
 
     // matching descriptors
-    BruteForceMatcher<L2<float> > matcher;
+    BFMatcher matcher(NORM_L2);
     vector<DMatch> matches;
     matcher.match(descriptors1, descriptors2, matches);
 
@@ -32,4 +53,6 @@ int main( int argc, char** argv ){
     drawMatches(img1, keypoints1, img2, keypoints2, matches, img_matches);
     imshow("matches", img_matches);
     waitKey(0);
+
+    return 0;
 }

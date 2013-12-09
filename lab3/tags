@@ -7,6 +7,8 @@
 CC	Makefile	/^CC=g++$/;"	m
 CFLAGS	Makefile	/^CFLAGS = `pkg-config --cflags opencv` -Wall -g$/;"	m
 LIBS	Makefile	/^LIBS = `pkg-config --libs opencv`$/;"	m
-SOURCES	Makefile	/^SOURCES = lab3.cpp$/;"	m
+SOURCES	Makefile	/^SOURCES = keypoints.cpp$/;"	m
+get_only_blue	lab3.cpp	/^Mat get_only_blue(Mat image){$/;"	f
+main	keypoints.cpp	/^int main( int argc, char** argv ){$/;"	f
 main	lab3.cpp	/^int main( int argc, char** argv )$/;"	f
-perspective_transformation	lab3.cpp	/^void perspective_transformation(Mat image){$/;"	f
+perspective_transformation	lab3.cpp	/^Mat perspective_transformation(Mat image){$/;"	f
