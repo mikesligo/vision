@@ -59,7 +59,7 @@ Mat get_border_dots(Mat image){
             int hue = hls.at<Vec3b>(row,col)[0];
             int lum = hls.at<Vec3b>(row,col)[1];
             int sat = hls.at<Vec3b>(row,col)[2];
-            if ( hue  <= 106 && hue >= 95 && sat >= 150 && lum <= 160){
+            if ( hue  <= 110 && hue >= 90 && sat >= 150 && lum <= 160){
             } else {
                 for (int channels = 0; channels < only_blue.channels(); channels ++){
                     only_blue.at<Vec3b>(row,col)[channels] = 0;
@@ -69,31 +69,30 @@ Mat get_border_dots(Mat image){
     }
     cvtColor(only_blue, only_blue_bgr, CV_HLS2BGR);
     cvtColor(only_blue_bgr, grey, CV_BGR2GRAY);
-    //GaussianBlur( grey, grey, Size(9, 9), 2, 2 );
+    GaussianBlur( grey, grey, Size(9, 9), 2, 2 );
     threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-    //adaptiveThreshold(grey, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 3, 0);
 
-    //remove_large_clusters(binary, 10);
-    
+    remove_large_clusters(binary, 10);
+
     return binary;
 }
 
 Mat get_border_rectangle(Mat dots){
-    Mat coloured;
+    Mat coloured, grey, binary;
     cvtColor(dots, coloured, CV_GRAY2BGR);
 
-    vector<Vec4i> lines_short, lines_long;
-    HoughLinesP( dots, lines_short, 1, CV_PI/200, 5, 300, 100 );
-    HoughLinesP( dots, lines_long, 1, CV_PI/200, 5, 460, 100 );
-    for( size_t i = 0; i < lines_short.size(); i++ )
+    vector<Vec4i> lines;
+    HoughLinesP( dots, lines, 1, CV_PI/200, 5, 200, 200 );
+    for( size_t i = 0; i < lines.size(); i++ )
     {
-        line( coloured, Point(lines_short[i][0], lines_short[i][1]), Point(lines_short[i][2], lines_short[i][3]), Scalar(0,0,255), 1, 8 );
+        line( coloured, Point(lines[i][0], lines[i][1]), Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 1, 8 );
     }
-    for( size_t i = 0; i < lines_long.size(); i++ )
-    {
-        line( coloured, Point(lines_long[i][0], lines_long[i][1]), Point(lines_long[i][2], lines_long[i][3]), Scalar(0,0,255), 1, 8 );
-    }
-    return coloured;
+
+    cvtColor(coloured, grey, CV_BGR2GRAY);
+    GaussianBlur( grey, grey, Size(9, 9), 2, 2 );
+    threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+    return binary;
 }
 
 Mat perspective_transformation(Mat image){
@@ -125,6 +124,7 @@ int main( int argc, char** argv )
     namedWindow("Lab3", CV_WINDOW_AUTOSIZE );
     for (int i = 1; i < argc; i++){
         filename = argv[i];
+        cout << filename << endl;
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
         border_dots = get_border_dots(image);
         houghed = get_border_rectangle(border_dots);
