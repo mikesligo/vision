@@ -7,7 +7,6 @@
 using namespace std;
 using namespace cv;
 
-
 Mat thresholdANDrgb (Mat thresholded, Mat rgb)
 {
     Mat no_black = rgb.clone();

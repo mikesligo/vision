@@ -116,7 +116,9 @@ Mat perspective_transformation(Mat image, Point2f * src){
     // circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
     // imshow("Lab3", transformed);
     // waitKey();
-    return transformed;
+    Rect roi(8,8, 398,589);
+    Mat cropped = transformed(roi);
+    return cropped;
 }
 
 // I don't know why, but the following methods only work if
