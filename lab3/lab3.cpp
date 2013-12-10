@@ -110,8 +110,17 @@ Mat perspective_transformation(Mat image, Point2f * src){
 
     affine_matrix = getAffineTransform(src, dst);
     warpAffine(image, transformed, affine_matrix, transformed.size());
+
+    // circle(transformed, dst[0], 50, CV_RGB(0,0,255), 0);
+    // circle(transformed, dst[1], 50, CV_RGB(0,255,0), 0);
+    // circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
+    // imshow("Lab3", transformed);
+    // waitKey();
     return transformed;
 }
+
+// I don't know why, but the following methods only work if
+// I return the point coordinates backwards to what I expect
 
 Point2f get_left_point(Mat binary){
     for (int i=300; i < binary.cols; i++){
@@ -160,8 +169,8 @@ Point2f * get_right_bottom_left(Mat binary){
     circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
     circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
     circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
-    imshow("Lab3", coloured);
-    waitKey();
+    //imshow("Lab3", coloured);
+    //waitKey();
     return corners;
 }
 
@@ -181,8 +190,8 @@ int main( int argc, char** argv )
         //        transformed = perspective_transformation(image);
         Point2f * points = get_right_bottom_left(border_dots);
         transformed = perspective_transformation(image, points);
-        //imshow("Lab3", transformed);
-        //waitKey();
+        imshow("Lab3", transformed);
+        waitKey();
     }
     return 0;
 }
