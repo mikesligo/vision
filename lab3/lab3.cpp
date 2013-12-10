@@ -94,7 +94,7 @@ Mat get_border_rectangle(Mat dots){
 Mat perspective_transformation(Mat image, Point2f * src){
 
     // apply standard transform
-    Mat affine_matrix, transformed;
+    Mat matrix, transformed;
     //Point2f src[3];
     Point2f dst[4];
 
@@ -108,8 +108,8 @@ Mat perspective_transformation(Mat image, Point2f * src){
     dst[2] = Point2f(398,589);
     dst[3] = Point2f(8,8);
 
-    perspective_matrix = getPerspectiveTransform(src, dst);
-    warpPerspective(image, transformed, perspective_matrix, transformed.size());
+    matrix = getPerspectiveTransform(src, dst);
+    warpPerspective(image, transformed, matrix, transformed.size());
 
      circle(transformed, dst[0], 50, CV_RGB(0,0,255), 0);
      circle(transformed, dst[1], 50, CV_RGB(0,255,0), 0);
@@ -133,7 +133,7 @@ Point2f get_left_point(Mat binary){
                 return Point2f(i,j);
             }
         }
-    }
+    }   
 }
 
 Point2f get_bottom_point(Mat binary){
@@ -141,18 +141,29 @@ Point2f get_bottom_point(Mat binary){
         for (int j=0; j < binary.cols; j++){
             if (binary.at<uchar>(i, j)) {
                 printf("Bottom - X: %d, Y:%d\n", i,j);
-                return Point2f(j, i);
+                return Point2f(j, i); 
             }
         }
-    }
+    }   
+}
+
+Point2f get_right_point(Mat binary){
+    for (int i=binary.cols-200; i >= 0; i--){
+        for (int j=0; j < binary.rows; j++){
+            if (binary.at<uchar>(j, i)) {
+                printf("Right - X: %d, Y:%d\n", j,i);
+                return Point2f(i,j);
+            }
+        }
+    }   
 }
 
 Point2f get_top_point(Mat binary){
-    for (int i=200; i < binary.rows; i++){
+    for (int i=100; i < binary.rows; i++){
         for (int j=300; j < binary.cols; j++){
             if (binary.at<uchar>(i, j)) {
-                printf("Right - X: %d, Y:%d\n", i,j);
-                return Point2f(i,j);
+                printf("Top - X: %d, Y:%d\n", i,j);
+                return Point2f(j,i);
             }
         }
     }
