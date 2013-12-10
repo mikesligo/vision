@@ -55,7 +55,7 @@ Mat get_border_dots(Mat image){
             int hue = hls.at<Vec3b>(row,col)[0];
             int lum = hls.at<Vec3b>(row,col)[1];
             int sat = hls.at<Vec3b>(row,col)[2];
-            if ( hue  <= 110 && hue >= 90 && sat >= 100 && lum <= 160){
+            if ( hue  <= 110 && hue >= 90 && sat >= 50 && lum <= 160){
             } else {
                 for (int channels = 0; channels < only_blue.channels(); channels ++){
                     only_blue.at<Vec3b>(row,col)[channels] = 0;
@@ -96,24 +96,25 @@ Mat perspective_transformation(Mat image, Point2f * src){
     // apply standard transform
     Mat affine_matrix, transformed;
     //Point2f src[3];
-    Point2f dst[3];
+    Point2f dst[4];
 
     //src[0] = Point2f(368,188);
     //src[0] = Point2f(1148,343);
     //src[1] = Point2f(543,530);
     //src[2] = Point2f(838,753);
 
-    //dst[0] = Point2f(8,8);
     dst[0] = Point2f(398,8);
     dst[1] = Point2f(8,589);
     dst[2] = Point2f(398,589);
+    dst[3] = Point2f(8,8);
 
-    affine_matrix = getAffineTransform(src, dst);
-    warpAffine(image, transformed, affine_matrix, transformed.size());
+    perspective_matrix = getPerspectiveTransform(src, dst);
+    warpPerspective(image, transformed, perspective_matrix, transformed.size());
 
-    // circle(transformed, dst[0], 50, CV_RGB(0,0,255), 0);
-    // circle(transformed, dst[1], 50, CV_RGB(0,255,0), 0);
-    // circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
+     circle(transformed, dst[0], 50, CV_RGB(0,0,255), 0);
+     circle(transformed, dst[1], 50, CV_RGB(0,255,0), 0);
+     circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
+     circle(transformed, dst[3], 50, CV_RGB(200,200,200), 0);
     // imshow("Lab3", transformed);
     // waitKey();
     Rect roi(8,8, 398,589);
@@ -146,11 +147,11 @@ Point2f get_bottom_point(Mat binary){
     }
 }
 
-Point2f get_right_point(Mat binary){
-    for (int i=binary.cols-200; i >= 0; i--){
-        for (int j=0; j < binary.rows; j++){
-            if (binary.at<uchar>(j, i)) {
-                printf("Right - X: %d, Y:%d\n", j,i);
+Point2f get_top_point(Mat binary){
+    for (int i=200; i < binary.rows; i++){
+        for (int j=300; j < binary.cols; j++){
+            if (binary.at<uchar>(i, j)) {
+                printf("Right - X: %d, Y:%d\n", i,j);
                 return Point2f(i,j);
             }
         }
@@ -159,10 +160,11 @@ Point2f get_right_point(Mat binary){
 
 Point2f * get_right_bottom_left(Mat binary){
     // start on the left
-    Point2f * corners = (Point2f*)malloc(sizeof(Point2f)*3); 
+    Point2f * corners = (Point2f*)malloc(sizeof(Point2f)*4); 
     corners[0] = get_right_point(binary);
     corners[1] = get_left_point(binary);
     corners[2]= get_bottom_point(binary);
+    corners[3]= get_top_point(binary);
     //  check that the next 2 clusters are roughly the standard distance away
     // if not then the next cluster is the starter
     // do the same for right and bot
@@ -171,8 +173,9 @@ Point2f * get_right_bottom_left(Mat binary){
     circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
     circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
     circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
-    //imshow("Lab3", coloured);
-    //waitKey();
+    circle(coloured, corners[3], 50, CV_RGB(200,200,200), 0);
+    imshow("Lab3", coloured);
+    waitKey();
     return corners;
 }
 
@@ -187,10 +190,9 @@ int main( int argc, char** argv )
         cout << filename << endl;
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
         border_dots = get_border_dots(image);
-        //houghed = get_border_rectangle(border_dots);
+        houghed = get_border_rectangle(border_dots);
         //source = get_4_blue_dots(image);
-        //        transformed = perspective_transformation(image);
-        Point2f * points = get_right_bottom_left(border_dots);
+        Point2f * points = get_right_bottom_left(houghed);
         transformed = perspective_transformation(image, points);
         imshow("Lab3", transformed);
         waitKey();

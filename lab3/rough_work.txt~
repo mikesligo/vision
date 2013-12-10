@@ -27,6 +27,10 @@ get distance between points
 
 min-distance-between = 85
 
+min width into the photo = 300
+
+rows/cols is as you would expect, cols > rows
+
 right so doing blur and thresholding on the hough lines is interesting, going to see if we can use non-maxima surpression to get the line thinner
 another option might be starting again using edge detection and see how good we can get it
 
