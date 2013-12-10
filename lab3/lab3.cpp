@@ -199,9 +199,12 @@ Mat ChamferMatching(Mat image, vector<string> templates){
     Mat chamfer_image, matching_image, model, grey;
 
     cvtColor(image, grey, CV_BGR2GRAY);
-    threshold(grey, model, 160, 255, THRESH_BINARY_INV );
+    threshold(grey, chamfer_image, 160, 255, THRESH_BINARY_INV );
+    model = imread(templates[0], CV_LOAD_IMAGE_COLOR);
 
-    chamfer_image = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+    resize(model, model, Size(), 0.5, 0.5, INTER_LINEAR);
+    cvtColor(model, grey, CV_BGR2GRAY);
+    threshold(grey, model, 160, 255, THRESH_BINARY);
 
     vector<Point> model_points;
     // gets all the white points
@@ -219,7 +222,6 @@ Mat ChamferMatching(Mat image, vector<string> templates){
 
     int num_model_points = model_points.size();
     image_channels = chamfer_image.channels();
-
     matching_image = Mat(chamfer_image.rows - model.rows + 1, chamfer_image.cols - model.cols + 1, CV_32FC1);
     for (int search_row = 0; search_row <= chamfer_image.rows - model.rows; search_row++){
         float * output_point = matching_image.ptr<float>(search_row);
@@ -235,15 +237,15 @@ Mat ChamferMatching(Mat image, vector<string> templates){
             output_point++;
         }
     }
-    
-    for (int i=0; i < matching_image.rows; i++){
-        for (int j=0; j < matching_image.cols; j++){
-            bitset<8>bin(matching_image.at<uchar>(i,j));
-            cout << bin;
+    for (int i=0; i< matching_image.cols; i++){
+        for (int j=0; j < matching_image.rows; j++){
+            unsigned int point = (unsigned int)matching_image.at<unsigned int>(i,j);
         }
-        cout << endl;
     }
-    return model;
+    threshold(matching_image, matching_image, 160, 255, THRESH_BINARY);
+    imshow("Lab3",  matching_image);
+    waitKey();
+    return matching_image;
 }
 
 int main( int argc, char** argv )
