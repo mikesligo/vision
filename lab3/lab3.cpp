@@ -5,6 +5,7 @@
 #include <vector>
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/features2d/features2d.hpp"
+#include <bitset>
 
 using namespace std;
 using namespace cv;
@@ -15,7 +16,6 @@ bool in_image_bounds(Mat& image, int x, int y){
 
 void delete_pixel_and_neighbours(Mat& binary, int x, int y){
     if (!binary.at<uchar>(x, y)) return;
-    //printf("X is %d, Y is %d\n", x, y);
     binary.at<uchar>(x, y) = 0;
     if (in_image_bounds(binary, x+1,y)){
         delete_pixel_and_neighbours(binary, x+1, y);
@@ -81,8 +81,7 @@ Mat get_border_rectangle(Mat dots){
 
     vector<Vec4i> lines;
     HoughLinesP( dots, lines, 1, CV_PI/200, 5, 200, 200 );
-    for( size_t i = 0; i < lines.size(); i++ )
-    {
+    for( size_t i = 0; i < lines.size(); i++ ) {
         line( coloured, Point(lines[i][0], lines[i][1]), Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 1, 8 );
     }
 
@@ -196,102 +195,56 @@ Point2f * get_right_bottom_left(Mat binary){
     return corners;
 }
 
-Mat sharpen_image(Mat image){
-    Mat sharpened = image.clone();
-    GaussianBlur(image, sharpened, Size(0,0), 11);
-    addWeighted(image, 3.5, sharpened, -2, 0, sharpened);
+Mat ChamferMatching(Mat image, vector<string> templates){
+    Mat chamfer_image, matching_image, model, grey;
 
-    Mat grey, binary;
     cvtColor(image, grey, CV_BGR2GRAY);
-    Canny(grey, binary, 100, 100);
-    return binary;
-}
+    threshold(grey, model, 160, 255, THRESH_BINARY_INV );
 
-Mat find_closest_match(Mat image, vector<string> templates){
-    //-- Step 1: Detect the keypoints using SURF Detector
-    Mat page_template = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+    chamfer_image = imread(templates[0], CV_LOAD_IMAGE_COLOR);
 
-    int minHessian = 400;
-
-    SurfFeatureDetector detector( minHessian );
-
-    std::vector<KeyPoint> keypoints_1, keypoints_2;
-
-    detector.detect( image, keypoints_1 );
-    detector.detect( page_template, keypoints_2 );
-
-    //-- Step 2: Calculate descriptors (feature vectors)
-    SurfDescriptorExtractor extractor;
-
-    Mat descriptors_1, descriptors_2;
-
-    extractor.compute( image, keypoints_1, descriptors_1 );
-    extractor.compute( page_template, keypoints_2, descriptors_2 );
-
-    //-- Step 3: Matching descriptor vectors using FLANN matcher
-    FlannBasedMatcher matcher;
-    std::vector< DMatch > matches;
-    matcher.match( descriptors_1, descriptors_2, matches );
-
-    double max_dist = 0; double min_dist = 100;
-
-    //-- Quick calculation of max and min distances between keypoints
-    for( int i = 0; i < descriptors_1.rows; i++ )
-    { double dist = matches[i].distance;
-        if( dist < min_dist ) min_dist = dist;
-        if( dist > max_dist ) max_dist = dist;
-    }
-
-    printf("-- Max dist : %f \n", max_dist );
-    printf("-- Min dist : %f \n", min_dist );
-
-    //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
-    //-- PS.- radiusMatch can also be used here.
-    std::vector< DMatch > good_matches;
-
-    for( int i = 0; i < descriptors_1.rows; i++ )
-    { if( matches[i].distance <= 2*min_dist )
-        { good_matches.push_back( matches[i]); }
-    }
-
-    //-- Draw only "good" matches
-    Mat img_matches;
-    drawMatches( image, keypoints_1, page_template, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-            vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-    cout << "Matches: " << good_matches.size() << endl;
-    return img_matches;
-}
-
-/*void ChamferMatching(Mat& chamfer_image, Mat& model, Mat& matching_image){
-    vector<Point model_points;
-    int image_channels = modelchannels();
-    for (int model_row = 0; (model_row < model_rows); model_row++){
+    vector<Point> model_points;
+    // gets all the white points
+    int image_channels = model.channels();
+    for (int model_row = 0; model_row < model.rows; model_row++){
         uchar * curr_point = model.ptr<uchar>(model_row);
         for (int model_column =0; model_column<model.cols ;model_column++){
             if (*curr_point > 0){
-                Point& new_point = Point(model_column, model_row);
+                Point new_point = Point(model_column, model_row);
                 model_points.push_back(new_point);
             }
             curr_point += image_channels;
         }
     }
+
     int num_model_points = model_points.size();
     image_channels = chamfer_image.channels();
 
     matching_image = Mat(chamfer_image.rows - model.rows + 1, chamfer_image.cols - model.cols + 1, CV_32FC1);
     for (int search_row = 0; search_row <= chamfer_image.rows - model.rows; search_row++){
-        float * output_point = matching_image.ptrMfloat>(search_row);
+        float * output_point = matching_image.ptr<float>(search_row);
         for (int search_column = 0; search_column <= chamfer_image.cols-model.cols; search_column++){
             float matching_score = 0.0;
             for (int point_count=0; point_count < num_model_points; point_count++){
-                matching_score += (float) *(chamfer_image.ptr<float>( model_points[point_count].y + search_row) + search_column
+                matching_score += 
+                        (float) *(chamfer_image.ptr<float>( model_points[point_count].y + search_row) 
+                        + search_column
                         + model_points[point_count].x*image_channels);
             }
             *output_point = matching_score;
             output_point++;
         }
     }
-}*/
+    
+    for (int i=0; i < matching_image.rows; i++){
+        for (int j=0; j < matching_image.cols; j++){
+            bitset<8>bin(matching_image.at<uchar>(i,j));
+            cout << bin;
+        }
+        cout << endl;
+    }
+    return model;
+}
 
 int main( int argc, char** argv )
 {
@@ -318,8 +271,8 @@ int main( int argc, char** argv )
             houghed = get_border_rectangle(border_dots);
             Point2f * points = get_right_bottom_left(houghed);
             transformed = perspective_transformation(image, points);
-            sharpened = sharpen_image(transformed);
-            compared = find_closest_match(sharpened, templates);
+            compared = ChamferMatching(transformed, templates);
+            //adaptiveThreshold(grey, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 33, 0);
             imshow("Lab3", compared);
             waitKey();
         }

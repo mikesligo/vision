@@ -45,3 +45,7 @@ now onto sift, using the flann.cpp file can't really distinguish, however the ou
 turning out to be kinda tricky the sharpen the image or get it to match perfectly with thresholding, definately possible though - oh maybe not
 
 sharpening may not be the way to go
+
+sift simple doesn't pick up images, chamfering might be good
+
+could just consider bottom half of transformed image as it is least blurry
