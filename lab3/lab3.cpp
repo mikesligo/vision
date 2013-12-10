@@ -198,31 +198,31 @@ Point2f * get_right_bottom_left(Mat binary){
 
 Mat sharpen_image(Mat image){
     Mat sharpened = image.clone();
-    GaussianBlur(image, sharpened, Size(0,0), 3);
-    addWeighted(image, 1.5, sharpened, -0.5, 0, sharpened);
+    GaussianBlur(image, sharpened, Size(0,0), 11);
+    addWeighted(image, 3.5, sharpened, -2, 0, sharpened);
     return sharpened;
 }
 
 Mat find_closest_match(Mat image, vector<string> templates){
     //-- Step 1: Detect the keypoints using SURF Detector
-    Mat img_1 = image;
-    Mat img_2 = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+    Mat page_template = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+
     int minHessian = 400;
 
     SurfFeatureDetector detector( minHessian );
 
     std::vector<KeyPoint> keypoints_1, keypoints_2;
 
-    detector.detect( img_1, keypoints_1 );
-    detector.detect( img_2, keypoints_2 );
+    detector.detect( image, keypoints_1 );
+    detector.detect( page_template, keypoints_2 );
 
     //-- Step 2: Calculate descriptors (feature vectors)
     SurfDescriptorExtractor extractor;
 
     Mat descriptors_1, descriptors_2;
 
-    extractor.compute( img_1, keypoints_1, descriptors_1 );
-    extractor.compute( img_2, keypoints_2, descriptors_2 );
+    extractor.compute( image, keypoints_1, descriptors_1 );
+    extractor.compute( page_template, keypoints_2, descriptors_2 );
 
     //-- Step 3: Matching descriptor vectors using FLANN matcher
     FlannBasedMatcher matcher;
@@ -252,7 +252,7 @@ Mat find_closest_match(Mat image, vector<string> templates){
 
     //-- Draw only "good" matches
     Mat img_matches;
-    drawMatches( img_1, keypoints_1, img_2, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+    drawMatches( image, keypoints_1, page_template, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
             vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
     cout << "Matches: " << good_matches.size() << endl;
     return img_matches;
