@@ -195,57 +195,99 @@ Point2f * get_right_bottom_left(Mat binary){
     return corners;
 }
 
-Mat ChamferMatching(Mat image, vector<string> templates){
-    Mat chamfer_image, matching_image, model, grey;
+/*Mat ChamferMatching(Mat image, vector<string> templates){
+  Mat chamfer_image, matching_image, model, grey;
 
-    cvtColor(image, grey, CV_BGR2GRAY);
-    threshold(grey, chamfer_image, 160, 255, THRESH_BINARY_INV );
-    model = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+  cvtColor(image, grey, CV_BGR2GRAY);
+  threshold(grey, chamfer_image, 160, 255, THRESH_BINARY_INV );
+  model = imread(templates[0], CV_LOAD_IMAGE_COLOR);
 
-    resize(model, model, Size(), 0.5, 0.5, INTER_LINEAR);
-    cvtColor(model, grey, CV_BGR2GRAY);
-    threshold(grey, model, 160, 255, THRESH_BINARY);
+  resize(model, model, Size(), 0.5, 0.5, INTER_LINEAR);
+  cvtColor(model, grey, CV_BGR2GRAY);
+  threshold(grey, model, 160, 255, THRESH_BINARY);
 
-    vector<Point> model_points;
-    // gets all the white points
-    int image_channels = model.channels();
-    for (int model_row = 0; model_row < model.rows; model_row++){
-        uchar * curr_point = model.ptr<uchar>(model_row);
-        for (int model_column =0; model_column<model.cols ;model_column++){
-            if (*curr_point > 0){
-                Point new_point = Point(model_column, model_row);
-                model_points.push_back(new_point);
-            }
-            curr_point += image_channels;
-        }
+  vector<Point> model_points;
+// gets all the white points
+int image_channels = model.channels();
+for (int model_row = 0; model_row < model.rows; model_row++){
+uchar * curr_point = model.ptr<uchar>(model_row);
+for (int model_column =0; model_column<model.cols ;model_column++){
+if (*curr_point > 0){
+Point new_point = Point(model_column, model_row);
+model_points.push_back(new_point);
+}
+curr_point += image_channels;
+}
+}
+
+int num_model_points = model_points.size();
+image_channels = chamfer_image.channels();
+matching_image = Mat(chamfer_image.rows - model.rows + 1, chamfer_image.cols - model.cols + 1, CV_32FC1);
+for (int search_row = 0; search_row <= chamfer_image.rows - model.rows; search_row++){
+float * output_point = matching_image.ptr<float>(search_row);
+for (int search_column = 0; search_column <= chamfer_image.cols-model.cols; search_column++){
+float matching_score = 0.0;
+for (int point_count=0; point_count < num_model_points; point_count++){
+matching_score += 
+(float) *(chamfer_image.ptr<float>( model_points[point_count].y + search_row) 
++ search_column
++ model_points[point_count].x*image_channels);
+}
+ *output_point = matching_score;
+ output_point++;
+ }
+ }
+ for (int i=0; i< matching_image.cols; i++){
+ for (int j=0; j < matching_image.rows; j++){
+ unsigned int point = (unsigned int)matching_image.at<unsigned int>(i,j);
+ }
+ }
+ threshold(matching_image, matching_image, 160, 255, THRESH_BINARY);
+ imshow("Lab3",  matching_image);
+ waitKey();
+ return matching_image;
+ }*/
+
+void check_matching(Mat templ, vector<string> templates){
+    Mat result;
+    Rect roi (20,20,templ.cols-20,templ.rows/3);
+    templ = templ(roi);
+    for(vector<int>::size_type i = 0; i != templates.size(); i++) {
+        Mat img = imread(templates[i], CV_LOAD_IMAGE_COLOR);
+
+        Mat img_display;
+        img.copyTo( img_display );
+
+        /// Create the result matrix
+        int result_cols =  img.cols - templ.cols + 1;
+        int result_rows = img.rows - templ.rows + 1;
+
+        result.create( result_cols, result_rows, CV_32FC1 );
+
+        /// Do the Matching and Normalize
+        matchTemplate( img, templ, result, CV_TM_SQDIFF_NORMED );
+        normalize( result, result, 0, 1, NORM_MINMAX, -1, Mat() );
+
+        /// Localizing the best match with minMaxLoc
+        double minVal, maxVal; 
+        Point minLoc; Point maxLoc;
+        Point matchLoc;
+
+        minMaxLoc( result, &minVal, &maxVal, &minLoc, &maxLoc, Mat() );
+
+        matchLoc = minLoc; 
+
+        /// Show me what you got
+        rectangle( img_display, matchLoc, Point( matchLoc.x + templ.cols , matchLoc.y + templ.rows ), Scalar::all(0), 2, 8, 0 );
+        rectangle( result, matchLoc, Point( matchLoc.x + templ.cols , matchLoc.y + templ.rows ), Scalar::all(0), 2, 8, 0 );
+        namedWindow("disp", CV_WINDOW_AUTOSIZE);
+        namedWindow("templ", CV_WINDOW_AUTOSIZE);
+        imshow("disp", img_display);
+        imshow("Lab3", result);
+        imshow("templ", templ);
+        cout << "Number white: " << countNonZero(result) << endl;;
+        waitKey();
     }
-
-    int num_model_points = model_points.size();
-    image_channels = chamfer_image.channels();
-    matching_image = Mat(chamfer_image.rows - model.rows + 1, chamfer_image.cols - model.cols + 1, CV_32FC1);
-    for (int search_row = 0; search_row <= chamfer_image.rows - model.rows; search_row++){
-        float * output_point = matching_image.ptr<float>(search_row);
-        for (int search_column = 0; search_column <= chamfer_image.cols-model.cols; search_column++){
-            float matching_score = 0.0;
-            for (int point_count=0; point_count < num_model_points; point_count++){
-                matching_score += 
-                        (float) *(chamfer_image.ptr<float>( model_points[point_count].y + search_row) 
-                        + search_column
-                        + model_points[point_count].x*image_channels);
-            }
-            *output_point = matching_score;
-            output_point++;
-        }
-    }
-    for (int i=0; i< matching_image.cols; i++){
-        for (int j=0; j < matching_image.rows; j++){
-            unsigned int point = (unsigned int)matching_image.at<unsigned int>(i,j);
-        }
-    }
-    threshold(matching_image, matching_image, 160, 255, THRESH_BINARY);
-    imshow("Lab3",  matching_image);
-    waitKey();
-    return matching_image;
 }
 
 int main( int argc, char** argv )
@@ -273,10 +315,11 @@ int main( int argc, char** argv )
             houghed = get_border_rectangle(border_dots);
             Point2f * points = get_right_bottom_left(houghed);
             transformed = perspective_transformation(image, points);
-            compared = ChamferMatching(transformed, templates);
+            check_matching(transformed, templates);
+            //            compared = ChamferMatching(transformed, templates);
             //adaptiveThreshold(grey, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 33, 0);
-            imshow("Lab3", compared);
-            waitKey();
+            //            imshow("Lab3", compared);
+            //           waitKey();
         }
     }
     return 0;

@@ -47,3 +47,9 @@ turning out to be kinda tricky the sharpen the image or get it to match perfectl
 sharpening may not be the way to go
 
 sift simple doesn't pick up images, chamfering might be good
+
+could just consider bottom half of transformed image as it is least blurry
+
+so chamfer isn't working for some strange reason, from intial inspection it should at least generate the champfer values although I don't know how to display them
+
+now going for idea of using in built template matching function and to match a ROI area of the image, and see if any match
