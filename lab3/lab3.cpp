@@ -3,6 +3,8 @@
 #include <iostream>
 #include <stdio.h>
 #include <vector>
+#include "opencv2/nonfree/nonfree.hpp"
+#include "opencv2/features2d/features2d.hpp"
 
 using namespace std;
 using namespace cv;
@@ -111,10 +113,10 @@ Mat perspective_transformation(Mat image, Point2f * src){
     matrix = getPerspectiveTransform(src, dst);
     warpPerspective(image, transformed, matrix, transformed.size());
 
-     circle(transformed, dst[0], 50, CV_RGB(0,0,255), 0);
-     circle(transformed, dst[1], 50, CV_RGB(0,255,0), 0);
-     circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
-     circle(transformed, dst[3], 50, CV_RGB(200,200,200), 0);
+    circle(transformed, dst[0], 50, CV_RGB(0,0,255), 0);
+    circle(transformed, dst[1], 50, CV_RGB(0,255,0), 0);
+    circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
+    circle(transformed, dst[3], 50, CV_RGB(200,200,200), 0);
     // imshow("Lab3", transformed);
     // waitKey();
     Rect roi(8,8, 398,589);
@@ -134,6 +136,7 @@ Point2f get_left_point(Mat binary){
             }
         }
     }   
+    return Point2f(0,binary.rows/2);
 }
 
 Point2f get_bottom_point(Mat binary){
@@ -145,6 +148,7 @@ Point2f get_bottom_point(Mat binary){
             }
         }
     }   
+    return Point2f(binary.cols/2,binary.rows);
 }
 
 Point2f get_right_point(Mat binary){
@@ -156,6 +160,7 @@ Point2f get_right_point(Mat binary){
             }
         }
     }   
+    return Point2f(0,binary.rows/2);
 }
 
 Point2f get_top_point(Mat binary){
@@ -167,6 +172,7 @@ Point2f get_top_point(Mat binary){
             }
         }
     }
+    return Point2f(binary.cols/2,0);
 }
 
 Point2f * get_right_bottom_left(Mat binary){
@@ -179,34 +185,109 @@ Point2f * get_right_bottom_left(Mat binary){
     //  check that the next 2 clusters are roughly the standard distance away
     // if not then the next cluster is the starter
     // do the same for right and bot
-    Mat coloured;
-    cvtColor(binary, coloured, CV_GRAY2BGR);
-    circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
-    circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
-    circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
-    circle(coloured, corners[3], 50, CV_RGB(200,200,200), 0);
-    imshow("Lab3", coloured);
-    waitKey();
+    //  Mat coloured;
+    //  cvtColor(binary, coloured, CV_GRAY2BGR);
+    //  circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
+    //  circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
+    //  circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
+    //  circle(coloured, corners[3], 50, CV_RGB(200,200,200), 0);
+    //  imshow("Lab3", coloured);
+    //  waitKey();
     return corners;
+}
+
+Mat sharpen_image(Mat image){
+    Mat sharpened = image.clone();
+    GaussianBlur(image, sharpened, Size(0,0), 3);
+    addWeighted(image, 1.5, sharpened, -0.5, 0, sharpened);
+    return sharpened;
+}
+
+Mat find_closest_match(Mat image, vector<string> templates){
+    //-- Step 1: Detect the keypoints using SURF Detector
+    Mat img_1 = image;
+    Mat img_2 = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+    int minHessian = 400;
+
+    SurfFeatureDetector detector( minHessian );
+
+    std::vector<KeyPoint> keypoints_1, keypoints_2;
+
+    detector.detect( img_1, keypoints_1 );
+    detector.detect( img_2, keypoints_2 );
+
+    //-- Step 2: Calculate descriptors (feature vectors)
+    SurfDescriptorExtractor extractor;
+
+    Mat descriptors_1, descriptors_2;
+
+    extractor.compute( img_1, keypoints_1, descriptors_1 );
+    extractor.compute( img_2, keypoints_2, descriptors_2 );
+
+    //-- Step 3: Matching descriptor vectors using FLANN matcher
+    FlannBasedMatcher matcher;
+    std::vector< DMatch > matches;
+    matcher.match( descriptors_1, descriptors_2, matches );
+
+    double max_dist = 0; double min_dist = 100;
+
+    //-- Quick calculation of max and min distances between keypoints
+    for( int i = 0; i < descriptors_1.rows; i++ )
+    { double dist = matches[i].distance;
+        if( dist < min_dist ) min_dist = dist;
+        if( dist > max_dist ) max_dist = dist;
+    }
+
+    printf("-- Max dist : %f \n", max_dist );
+    printf("-- Min dist : %f \n", min_dist );
+
+    //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
+    //-- PS.- radiusMatch can also be used here.
+    std::vector< DMatch > good_matches;
+
+    for( int i = 0; i < descriptors_1.rows; i++ )
+    { if( matches[i].distance <= 2*min_dist )
+        { good_matches.push_back( matches[i]); }
+    }
+
+    //-- Draw only "good" matches
+    Mat img_matches;
+    drawMatches( img_1, keypoints_1, img_2, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+            vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+    cout << "Matches: " << good_matches.size() << endl;
+    return img_matches;
 }
 
 int main( int argc, char** argv )
 {
-    Mat image, transformed, border_dots, houghed;
+    Mat image, transformed, border_dots, houghed, sharpened, compared;
     string filename;
+
+    vector<string> templates;
+    for (int i=1; i< argc; i++){
+        filename = argv[i];
+        if (filename.substr(0,14).compare("pageimagefiles") == 0){
+            templates.push_back(filename);
+        }
+    }
+
     assert((argc >= 2) && "Not enough arguments");
     namedWindow("Lab3", CV_WINDOW_AUTOSIZE );
+
     for (int i = 1; i < argc; i++){
         filename = argv[i];
-        cout << filename << endl;
-        image = imread(filename, CV_LOAD_IMAGE_COLOR);
-        border_dots = get_border_dots(image);
-        houghed = get_border_rectangle(border_dots);
-        //source = get_4_blue_dots(image);
-        Point2f * points = get_right_bottom_left(houghed);
-        transformed = perspective_transformation(image, points);
-        imshow("Lab3", transformed);
-        waitKey();
+        if (filename.substr(0,14).compare("pageimagefiles") != 0){
+            cout << "Filename: " << filename << endl;
+            image = imread(filename, CV_LOAD_IMAGE_COLOR);
+            border_dots = get_border_dots(image);
+            houghed = get_border_rectangle(border_dots);
+            Point2f * points = get_right_bottom_left(houghed);
+            transformed = perspective_transformation(image, points);
+            sharpened = sharpen_image(transformed);
+            compared = find_closest_match(sharpened, templates);
+            imshow("Lab3", compared);
+            waitKey();
+        }
     }
     return 0;
 }

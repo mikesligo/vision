@@ -7,16 +7,22 @@
 CC	Makefile	/^CC=g++$/;"	m
 CFLAGS	Makefile	/^CFLAGS = `pkg-config --cflags opencv` -Wall -g$/;"	m
 LIBS	Makefile	/^LIBS = `pkg-config --libs opencv`$/;"	m
-MorphologicalThinning	lab3.cpp	/^void MorphologicalThinning(CvMat *pSrc, CvMat *pDst) {$/;"	f
 SOURCES	Makefile	/^SOURCES = lab3.cpp$/;"	m
-ThinSubiteration1	lab3.cpp	/^void ThinSubiteration1(CvMat *pSrc, CvMat *pDst) {$/;"	f
-ThinSubiteration2	lab3.cpp	/^void ThinSubiteration2(CvMat *pSrc, CvMat *pDst) {$/;"	f
 delete_pixel_and_neighbours	lab3.cpp	/^void delete_pixel_and_neighbours(Mat& binary, int x, int y){$/;"	f
+find_closest_match	lab3.cpp	/^Mat find_closest_match(Mat image, vector<string> templates){$/;"	f
 get_border_dots	lab3.cpp	/^Mat get_border_dots(Mat image){$/;"	f
 get_border_rectangle	lab3.cpp	/^Mat get_border_rectangle(Mat dots){$/;"	f
+get_bottom_point	lab3.cpp	/^Point2f get_bottom_point(Mat binary){$/;"	f
+get_left_point	lab3.cpp	/^Point2f get_left_point(Mat binary){$/;"	f
+get_right_bottom_left	lab3.cpp	/^Point2f * get_right_bottom_left(Mat binary){$/;"	f
+get_right_point	lab3.cpp	/^Point2f get_right_point(Mat binary){$/;"	f
+get_top_point	lab3.cpp	/^Point2f get_top_point(Mat binary){$/;"	f
 help	keypoints.cpp	/^static void help()$/;"	f	file:
 in_image_bounds	lab3.cpp	/^bool in_image_bounds(Mat& image, int x, int y){$/;"	f
+main	flann.cpp	/^int main( int argc, char** argv )$/;"	f
 main	keypoints.cpp	/^int main(int argc, char** argv)$/;"	f
 main	lab3.cpp	/^int main( int argc, char** argv )$/;"	f
-perspective_transformation	lab3.cpp	/^Mat perspective_transformation(Mat image){$/;"	f
+perspective_transformation	lab3.cpp	/^Mat perspective_transformation(Mat image, Point2f * src){$/;"	f
+readme	flann.cpp	/^ void readme()$/;"	f
 remove_large_clusters	lab3.cpp	/^void remove_large_clusters(Mat binary, int radius){$/;"	f
+sharpen_image	lab3.cpp	/^Mat sharpen_image(Mat image){$/;"	f
