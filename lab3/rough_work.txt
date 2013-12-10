@@ -42,4 +42,6 @@ ok will do all that later, for the time being have perspective transformation wo
 
 now onto sift, using the flann.cpp file can't really distinguish, however the output is blurred and the input is crisp, so going to try and sharpen the output and blur the input - sharpening worked perfectly!
 
-turning out to be kinda tricky the sharpen the image or get it to match perfectly with thresholding, definately possible though
+turning out to be kinda tricky the sharpen the image or get it to match perfectly with thresholding, definately possible though - oh maybe not
+
+sharpening may not be the way to go

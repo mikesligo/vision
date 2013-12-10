@@ -200,7 +200,11 @@ Mat sharpen_image(Mat image){
     Mat sharpened = image.clone();
     GaussianBlur(image, sharpened, Size(0,0), 11);
     addWeighted(image, 3.5, sharpened, -2, 0, sharpened);
-    return sharpened;
+
+    Mat grey, binary;
+    cvtColor(image, grey, CV_BGR2GRAY);
+    Canny(grey, binary, 100, 100);
+    return binary;
 }
 
 Mat find_closest_match(Mat image, vector<string> templates){
@@ -257,6 +261,37 @@ Mat find_closest_match(Mat image, vector<string> templates){
     cout << "Matches: " << good_matches.size() << endl;
     return img_matches;
 }
+
+/*void ChamferMatching(Mat& chamfer_image, Mat& model, Mat& matching_image){
+    vector<Point model_points;
+    int image_channels = modelchannels();
+    for (int model_row = 0; (model_row < model_rows); model_row++){
+        uchar * curr_point = model.ptr<uchar>(model_row);
+        for (int model_column =0; model_column<model.cols ;model_column++){
+            if (*curr_point > 0){
+                Point& new_point = Point(model_column, model_row);
+                model_points.push_back(new_point);
+            }
+            curr_point += image_channels;
+        }
+    }
+    int num_model_points = model_points.size();
+    image_channels = chamfer_image.channels();
+
+    matching_image = Mat(chamfer_image.rows - model.rows + 1, chamfer_image.cols - model.cols + 1, CV_32FC1);
+    for (int search_row = 0; search_row <= chamfer_image.rows - model.rows; search_row++){
+        float * output_point = matching_image.ptrMfloat>(search_row);
+        for (int search_column = 0; search_column <= chamfer_image.cols-model.cols; search_column++){
+            float matching_score = 0.0;
+            for (int point_count=0; point_count < num_model_points; point_count++){
+                matching_score += (float) *(chamfer_image.ptr<float>( model_points[point_count].y + search_row) + search_column
+                        + model_points[point_count].x*image_channels);
+            }
+            *output_point = matching_score;
+            output_point++;
+        }
+    }
+}*/
 
 int main( int argc, char** argv )
 {
