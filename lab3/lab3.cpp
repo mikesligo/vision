@@ -288,8 +288,8 @@ int main( int argc, char** argv )
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
             compared = find_closest_match(sharpened, templates);
- //           imshow("Lab3", compared);
-//            waitKey();
+           imshow("Lab3", compared);
+            waitKey();
         }
     }
     return 0;
