@@ -197,8 +197,6 @@ Mat sharpen_image(Mat image){
 }
 
 Mat find_closest_match(Mat image, vector<string> templates){
-    Mat img_matches = Mat(((int)image.cols/5)*5, image.rows, CV_32F);
-    vector<DMatch> good_matches;
 
     //-- Step 1: Detect the keypoints using SURF Detector
     Rect roi(0,0,image.cols,image.rows);
@@ -207,9 +205,10 @@ Mat find_closest_match(Mat image, vector<string> templates){
 
     Mat img_1, img_2;
     vector<KeyPoint> keypoints_1, keypoints_2;
-    int divisor = 5;
+    int divisor = 2;
     int increment = image.cols/divisor;
     int max = image.cols - image.cols%divisor;
+    Mat img_matches = Mat(image.cols/divisor, image.rows, CV_32F);
 
     printf("size: %d, %d\n", image.cols, image.rows);
     for (int cols=0; cols < max; cols += increment){
@@ -217,6 +216,7 @@ Mat find_closest_match(Mat image, vector<string> templates){
         img_1 = image(section);
         img_2 = tmpl(section);
         int minHessian = 400;
+    vector<DMatch> good_matches;
 
         SurfFeatureDetector detector( minHessian );
 
@@ -253,11 +253,13 @@ Mat find_closest_match(Mat image, vector<string> templates){
                 good_matches.push_back(matches[i]); 
             }
         }
+        drawMatches( img_1, keypoints_1, img_2, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+           vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+        imshow("Lab3", img_matches);
+        waitKey();
 
     }
-    //drawMatches( image, keypoints_1, tmpl, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-     //       vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-    cout << "Matches: " << good_matches.size() << endl;
+    //cout << "Matches: " << good_matches.size() << endl;
     return img_matches;
 }
 
