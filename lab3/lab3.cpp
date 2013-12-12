@@ -81,8 +81,7 @@ Mat get_border_rectangle(Mat dots){
 
     vector<Vec4i> lines;
     HoughLinesP( dots, lines, 1, CV_PI/200, 5, 200, 200 );
-    for( size_t i = 0; i < lines.size(); i++ )
-    {
+    for( size_t i = 0; i < lines.size(); i++ ) {
         line( coloured, Point(lines[i][0], lines[i][1]), Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 1, 8 );
     }
 
@@ -97,14 +96,8 @@ Mat perspective_transformation(Mat image, Point2f * src){
 
     // apply standard transform
     Mat matrix, transformed;
-    //Point2f src[3];
+
     Point2f dst[4];
-
-    //src[0] = Point2f(368,188);
-    //src[0] = Point2f(1148,343);
-    //src[1] = Point2f(543,530);
-    //src[2] = Point2f(838,753);
-
     dst[0] = Point2f(398,8);
     dst[1] = Point2f(8,589);
     dst[2] = Point2f(398,589);
@@ -198,62 +191,72 @@ Point2f * get_right_bottom_left(Mat binary){
 
 Mat sharpen_image(Mat image){
     Mat sharpened = image.clone();
-    GaussianBlur(image, sharpened, Size(0,0), 11);
-    addWeighted(image, 3.5, sharpened, -2, 0, sharpened);
+    GaussianBlur(image, sharpened, Size(0,0), 3);
+    addWeighted(image, 1.5, sharpened, -0.5, 0, sharpened);
     return sharpened;
 }
 
 Mat find_closest_match(Mat image, vector<string> templates){
+    Mat img_matches = Mat(((int)image.cols/5)*5, image.rows, CV_32F);
+    vector<DMatch> good_matches;
+
     //-- Step 1: Detect the keypoints using SURF Detector
-    Mat page_template = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+    Rect roi(0,0,image.cols,image.rows);
 
-    int minHessian = 400;
+    Mat tmpl = imread(templates[0], CV_LOAD_IMAGE_COLOR)(roi);
 
-    SurfFeatureDetector detector( minHessian );
+    Mat img_1, img_2;
+    vector<KeyPoint> keypoints_1, keypoints_2;
+    int divisor = 5;
+    int increment = image.cols/divisor;
+    int max = image.cols - image.cols%divisor;
 
-    std::vector<KeyPoint> keypoints_1, keypoints_2;
+    printf("size: %d, %d\n", image.cols, image.rows);
+    for (int cols=0; cols < max; cols += increment){
+        Rect section (cols, 0, increment, image.rows);
+        img_1 = image(section);
+        img_2 = tmpl(section);
+        int minHessian = 400;
 
-    detector.detect( image, keypoints_1 );
-    detector.detect( page_template, keypoints_2 );
+        SurfFeatureDetector detector( minHessian );
 
-    //-- Step 2: Calculate descriptors (feature vectors)
-    SurfDescriptorExtractor extractor;
+        detector.detect( img_1, keypoints_1 );
+        detector.detect( img_2, keypoints_2 );
 
-    Mat descriptors_1, descriptors_2;
+        //-- Step 2: Calculate descriptors (feature vectors)
+        SurfDescriptorExtractor extractor;
 
-    extractor.compute( image, keypoints_1, descriptors_1 );
-    extractor.compute( page_template, keypoints_2, descriptors_2 );
+        Mat descriptors_1, descriptors_2;
 
-    //-- Step 3: Matching descriptor vectors using FLANN matcher
-    FlannBasedMatcher matcher;
-    std::vector< DMatch > matches;
-    matcher.match( descriptors_1, descriptors_2, matches );
+        extractor.compute( img_1, keypoints_1, descriptors_1 );
+        extractor.compute( img_2, keypoints_2, descriptors_2 );
 
-    double max_dist = 0; double min_dist = 100;
+        //-- Step 3: Matching descriptor vectors using FLANN matcher
+        FlannBasedMatcher matcher;
+        vector<DMatch> matches;
+        matcher.match(descriptors_1, descriptors_2, matches );
 
-    //-- Quick calculation of max and min distances between keypoints
-    for( int i = 0; i < descriptors_1.rows; i++ )
-    { double dist = matches[i].distance;
-        if( dist < min_dist ) min_dist = dist;
-        if( dist > max_dist ) max_dist = dist;
+        double max_dist = 0; double min_dist = 100;
+
+        //-- Quick calculation of max and min distances between keypoints
+        for( int i = 0; i < descriptors_1.rows; i++ ) { 
+            double dist = matches[i].distance;
+            if( dist < min_dist ) min_dist = dist;
+            if( dist > max_dist ) max_dist = dist;
+        }
+
+        //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
+        //-- PS.- radiusMatch can also be used here.
+
+        for( int i = 0; i < descriptors_1.rows; i++ ){ 
+            if(matches[i].distance <= 2 * min_dist ){ 
+                good_matches.push_back(matches[i]); 
+            }
+        }
+
     }
-
-    printf("-- Max dist : %f \n", max_dist );
-    printf("-- Min dist : %f \n", min_dist );
-
-    //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
-    //-- PS.- radiusMatch can also be used here.
-    std::vector< DMatch > good_matches;
-
-    for( int i = 0; i < descriptors_1.rows; i++ )
-    { if( matches[i].distance <= 2*min_dist )
-        { good_matches.push_back( matches[i]); }
-    }
-
-    //-- Draw only "good" matches
-    Mat img_matches;
-    drawMatches( image, keypoints_1, page_template, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-            vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+    //drawMatches( image, keypoints_1, tmpl, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+     //       vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
     cout << "Matches: " << good_matches.size() << endl;
     return img_matches;
 }
@@ -285,8 +288,8 @@ int main( int argc, char** argv )
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
             compared = find_closest_match(sharpened, templates);
-            imshow("Lab3", compared);
-            waitKey();
+ //           imshow("Lab3", compared);
+//            waitKey();
         }
     }
     return 0;
