@@ -102,9 +102,8 @@ Point2f * get_border(Mat binary, int radius, int min){
             }
         }
     }
-    
-    imshow("Lab3",binary);
-    waitKey();
+    namedWindow("Lab3_1", CV_WINDOW_AUTOSIZE);
+    imshow("Lab3_1",binary);
 
     Point2f * border_points = get_border_rigt_bottom_left_top(valid_points);
 
@@ -208,15 +207,10 @@ void count_pixels_in_rows(Mat image, vector<string> templates){
             cvtColor(cropped_img, grey, CV_BGR2GRAY);
             threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
             black_1 = binary.rows*binary.cols - countNonZero(binary);
-            //imshow("Lab3", binary);
-            //waitKey();
 
-            //namedWindow("Lab3_1", CV_WINDOW_AUTOSIZE);
             cvtColor(cropped_tmpl, grey, CV_BGR2GRAY);
             threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
             black_2 = binary.rows*binary.cols - countNonZero(binary);
-            //imshow("Lab3_1", binary);
-            //waitKey()
 
             difference = abs(difference + (black_1-black_2));
         }
