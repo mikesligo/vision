@@ -5,6 +5,7 @@
 #include <vector>
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/features2d/features2d.hpp"
+#include <cmath>
 
 using namespace std;
 using namespace cv;
@@ -196,37 +197,50 @@ Mat sharpen_image(Mat image){
     return sharpened;
 }
 
-void count_lines(Mat image, vector<string> templates){
-    int difference =0;
-    Mat tmpl = imread(templates[0], CV_LOAD_IMAGE_COLOR);
-    int divisor = 4;
+void count_pixels_in_rows(Mat image, vector<string> templates){
+    int divisor = 5;
     int max = image.rows - image.rows%divisor;
     int increment = image.rows/divisor;
-    for (int row=0; row < max; row += increment){
-        Rect roi(0, row, image.cols, increment);
-        Mat cropped_img = image(roi);
-        Mat cropped_tmpl = tmpl(roi);
+    int closest_count = 10000000;
+    string closest_file;
+    for (size_t cnt =0; cnt < templates.size(); cnt ++){
+        int difference =0;
+        Mat tmpl = imread(templates[cnt], CV_LOAD_IMAGE_COLOR);
+        for (int row=0; row < max; row += increment){
+            Rect roi(0, row, image.cols, increment);
+            Mat cropped_img = image(roi);
+            Mat cropped_tmpl = tmpl(roi);
 
-        Mat grey, binary;
-        int black_1, black_2;
+            Mat grey, binary;
+            int black_1, black_2;
 
-        cvtColor(cropped_img, grey, CV_BGR2GRAY);
-        threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-        black_1 = binary.rows*binary.cols - countNonZero(binary);
-        imshow("Lab3", binary);
-        waitKey();
-        
-        namedWindow("Lab3_1", CV_WINDOW_AUTOSIZE);
-        cvtColor(cropped_tmpl, grey, CV_BGR2GRAY);
-        threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-        black_2 = binary.rows*binary.cols - countNonZero(binary);
-        imshow("Lab3_1", binary);
-        waitKey();
+            cvtColor(cropped_img, grey, CV_BGR2GRAY);
+            threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+            black_1 = binary.rows*binary.cols - countNonZero(binary);
+            //imshow("Lab3", binary);
+            //waitKey();
 
-        printf("Difference: %d\n", black_1-black_2);
-        difference = difference + (black_1-black_2);
+            //namedWindow("Lab3_1", CV_WINDOW_AUTOSIZE);
+            cvtColor(cropped_tmpl, grey, CV_BGR2GRAY);
+            threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+            black_2 = binary.rows*binary.cols - countNonZero(binary);
+            //imshow("Lab3_1", binary);
+            //waitKey()
+
+            difference = abs(difference + (black_1-black_2));
+        }
+        if (difference < closest_count){
+            closest_count = difference;
+            closest_file = templates[cnt];
+        }
+        cout << "Final difference for " << templates[cnt] << ": " << difference << endl;
     }
-    printf("Final difference: %d\n", difference);
+    cout << "Closest is " << closest_file << ", with " << closest_count << " pixels difference" << endl;
+    Mat tmpl = imread(closest_file, CV_LOAD_IMAGE_COLOR);
+    namedWindow("Lab3_2", CV_WINDOW_AUTOSIZE);
+    imshow("Lab3", image);
+    imshow("Lab3_2", tmpl);
+    waitKey();
 }
 
 int main( int argc, char** argv )
@@ -255,9 +269,9 @@ int main( int argc, char** argv )
             Point2f * points = get_right_bottom_left(houghed);
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
-            count_lines(sharpened, templates);
-//            imshow("Lab3", sharpened);
-//            waitKey();
+            count_pixels_in_rows(sharpened, templates);
+            //            imshow("Lab3", sharpened);
+            //            waitKey();
         }
     }
     return 0;
