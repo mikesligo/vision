@@ -47,6 +47,44 @@ void remove_large_clusters(Mat binary, int radius){
     }
 }
 
+void remove_dots_not_near_others(Mat binary, int radius, int min){
+    Mat tmp = binary.clone();
+    vector<Point2f> points;
+    for (int row=0; row < tmp.rows-min; row++){
+        for (int col=0; col < tmp.cols-min; col++){
+            if (tmp.at<uchar>(row,col)){
+                points.push_back(Point2f(col,row));
+                //printf("row: %d, col: %d, min: %d, tmp.rows: %d, tmp.cols:%d\n", row, col, min, tmp.rows, tmp.cols);
+                Rect roi(col,row,min,min);
+                Mat section = tmp(roi);
+                section.setTo(Scalar(0,0,0));
+            }
+        }
+    }
+    cout <<"Size: " << points.size()<<endl;
+    for (size_t i=0; i<points.size(); i++){
+        printf( "Considering points (%f,%f)\n",points[i].x,points[i].y);
+        for (size_t j=0; j<points.size(); j++){
+            if (j != i){
+                double dX0 = points[i].x;
+                double dY0 = points[i].y;
+                double dX1 = points[j].x;
+                double dY1 = points[j].y;
+                double dist = sqrt((dX1 - dX0)*(dX1 - dX0) + (dY1 - dY0)*(dY1 - dY0));
+                cout << "dist is " << dist << endl;
+                if (dist > min && dist < radius){
+                    circle(tmp, points[i], 50, CV_RGB(0,0,255), 0);
+                    printf( "Found match for (%f,%f) and (%f,%f)\n",dX0,dY0,dX1,dY1);
+                    continue;
+                }
+            }
+        }
+        points.erase(points.begin() + i);
+    }
+    imshow("Lab3", tmp);
+    waitKey();
+}
+
 Mat get_border_dots(Mat image){
     Mat only_blue = image.clone();
     Mat hls, grey, binary, no_clusters, only_blue_bgr;
@@ -71,7 +109,9 @@ Mat get_border_dots(Mat image){
     GaussianBlur( grey, grey, Size(9, 9), 2, 2 );
     threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
-    remove_large_clusters(binary, 10);
+    remove_large_clusters(binary, 5);
+
+    remove_dots_not_near_others(binary, 150, 50);
 
     return binary;
 }
@@ -179,14 +219,14 @@ Point2f * get_right_bottom_left(Mat binary){
     //  check that the next 2 clusters are roughly the standard distance away
     // if not then the next cluster is the starter
     // do the same for right and bot
-    //  Mat coloured;
-    //  cvtColor(binary, coloured, CV_GRAY2BGR);
-    //  circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
-    //  circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
-    //  circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
-    //  circle(coloured, corners[3], 50, CV_RGB(200,200,200), 0);
-    //  imshow("Lab3", coloured);
-    //  waitKey();
+    Mat coloured;
+    cvtColor(binary, coloured, CV_GRAY2BGR);
+    circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
+    circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
+    circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
+    circle(coloured, corners[3], 50, CV_RGB(200,200,200), 0);
+    imshow("Lab3", coloured);
+    waitKey();
     return corners;
 }
 
@@ -265,13 +305,12 @@ int main( int argc, char** argv )
             cout << "Filename: " << filename << endl;
             image = imread(filename, CV_LOAD_IMAGE_COLOR);
             border_dots = get_border_dots(image);
-            houghed = get_border_rectangle(border_dots);
-            Point2f * points = get_right_bottom_left(houghed);
+            Point2f * points = get_right_bottom_left(border_dots);
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
-            count_pixels_in_rows(sharpened, templates);
-            //            imshow("Lab3", sharpened);
-            //            waitKey();
+            //            count_pixels_in_rows(sharpened, templates);
+            //                       imshow("Lab3", sharpened);
+            //                        waitKey();
         }
     }
     return 0;

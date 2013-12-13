@@ -46,3 +46,5 @@ splitting them up simply not as good as I would expect
 
 doing a normalised cross correlation (again) looks the most promising if I can get a probability somehow
 
+a fair radius is 100
+
