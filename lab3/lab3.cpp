@@ -215,7 +215,7 @@ void count_pixels_in_rows(Mat image, vector<string> templates){
             threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
             black_2 = binary.rows*binary.cols - countNonZero(binary);
 
-            difference = abs(difference + (black_1-black_2));
+            difference = abs(difference + (abs(black_1-black_2)));
         }
         if (difference < closest_count){
             closest_count = difference;
@@ -244,7 +244,7 @@ int main( int argc, char** argv )
     }
 
     assert((argc >= 2) && "Not enough arguments");
-    namedWindow("Lab3", CV_NORMAL );
+    namedWindow("Lab3", CV_WINDOW_AUTOSIZE );
 
     for (int i = 1; i < argc; i++){
         filename = argv[i];
