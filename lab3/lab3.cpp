@@ -47,42 +47,68 @@ void remove_large_clusters(Mat binary, int radius){
     }
 }
 
-void remove_dots_not_near_others(Mat binary, int radius, int min){
+Point2f * get_border_rigt_bottom_left_top(vector<Point2f> points){
+    Point2f * corners = (Point2f*)malloc(sizeof(Point2f)*4); 
+    corners[0] = points[0];
+    corners[1] = points[0];
+    corners[2] = points[0];
+    corners[3] = points[0];
+
+    for (size_t i=0; i<points.size(); i++){
+        Point2f point = points[i];
+        int x = point.x;
+        int y = point.y;
+        if (x > corners[0].x){
+            corners[0] = point;
+        }
+        if (x < corners[1].x){
+            corners[1] = point;
+        }
+        if (y > corners[2].y){
+            corners[2] = point;
+        }
+        if (y < corners[3].y){
+            corners[3] = point;
+        }
+    }
+    return corners;
+}
+
+Point2f * get_border(Mat binary, int radius, int min){
     Mat tmp = binary.clone();
     vector<Point2f> points;
-    for (int row=0; row < tmp.rows-min; row++){
-        for (int col=0; col < tmp.cols-min; col++){
+    vector<Point2f> valid_points;
+    int border = 100;
+    for (int row=border; row < tmp.rows-border-min; row++){
+        for (int col=border; col < tmp.cols-border-min; col++){
             if (tmp.at<uchar>(row,col)){
                 points.push_back(Point2f(col,row));
                 //printf("row: %d, col: %d, min: %d, tmp.rows: %d, tmp.cols:%d\n", row, col, min, tmp.rows, tmp.cols);
-                Rect roi(col,row,min,min);
-                Mat section = tmp(roi);
-                section.setTo(Scalar(0,0,0));
             }
         }
     }
-    cout <<"Size: " << points.size()<<endl;
     for (size_t i=0; i<points.size(); i++){
-        printf( "Considering points (%f,%f)\n",points[i].x,points[i].y);
         for (size_t j=0; j<points.size(); j++){
             if (j != i){
-                double dX0 = points[i].x;
-                double dY0 = points[i].y;
-                double dX1 = points[j].x;
-                double dY1 = points[j].y;
-                double dist = sqrt((dX1 - dX0)*(dX1 - dX0) + (dY1 - dY0)*(dY1 - dY0));
-                cout << "dist is " << dist << endl;
+                int dX0 = points[i].x;
+                int dY0 = points[i].y;
+                int dX1 = points[j].x;
+                int dY1 = points[j].y;
+                int dist = sqrt((dX1 - dX0)*(dX1 - dX0) + (dY1 - dY0)*(dY1 - dY0));
                 if (dist > min && dist < radius){
-                    circle(tmp, points[i], 50, CV_RGB(0,0,255), 0);
-                    printf( "Found match for (%f,%f) and (%f,%f)\n",dX0,dY0,dX1,dY1);
-                    continue;
+                    valid_points.push_back(points[i]);
+                    break;
                 }
             }
         }
-        points.erase(points.begin() + i);
     }
-    imshow("Lab3", tmp);
+    
+    imshow("Lab3",binary);
     waitKey();
+
+    Point2f * border_points = get_border_rigt_bottom_left_top(valid_points);
+
+    return border_points;
 }
 
 Mat get_border_dots(Mat image){
@@ -106,12 +132,7 @@ Mat get_border_dots(Mat image){
     }
     cvtColor(only_blue, only_blue_bgr, CV_HLS2BGR);
     cvtColor(only_blue_bgr, grey, CV_BGR2GRAY);
-    GaussianBlur( grey, grey, Size(9, 9), 2, 2 );
     threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-
-    remove_large_clusters(binary, 5);
-
-    remove_dots_not_near_others(binary, 150, 50);
 
     return binary;
 }
@@ -136,6 +157,8 @@ Mat get_border_rectangle(Mat dots){
 Mat perspective_transformation(Mat image, Point2f * src){
 
     // apply standard transform
+
+
     Mat matrix, transformed;
 
     Point2f dst[4];
@@ -151,84 +174,12 @@ Mat perspective_transformation(Mat image, Point2f * src){
     circle(transformed, dst[1], 50, CV_RGB(0,255,0), 0);
     circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
     circle(transformed, dst[3], 50, CV_RGB(200,200,200), 0);
-    // imshow("Lab3", transformed);
-    // waitKey();
+
     Rect roi(8,8, 398,589);
     Mat cropped = transformed(roi);
     return cropped;
 }
 
-// I don't know why, but the following methods only work if
-// I return the point coordinates backwards to what I expect
-
-Point2f get_left_point(Mat binary){
-    for (int i=300; i < binary.cols; i++){
-        for (int j=0; j < binary.rows; j++){
-            if (binary.at<uchar>(j, i)) {
-                printf("Left - X: %d, Y:%d\n", j,i);
-                return Point2f(i,j);
-            }
-        }
-    }   
-    return Point2f(0,binary.rows/2);
-}
-
-Point2f get_bottom_point(Mat binary){
-    for (int i= binary.rows-100; i > 0; i--){
-        for (int j=0; j < binary.cols; j++){
-            if (binary.at<uchar>(i, j)) {
-                printf("Bottom - X: %d, Y:%d\n", i,j);
-                return Point2f(j, i); 
-            }
-        }
-    }   
-    return Point2f(binary.cols/2,binary.rows);
-}
-
-Point2f get_right_point(Mat binary){
-    for (int i=binary.cols-200; i >= 0; i--){
-        for (int j=0; j < binary.rows; j++){
-            if (binary.at<uchar>(j, i)) {
-                printf("Right - X: %d, Y:%d\n", j,i);
-                return Point2f(i,j);
-            }
-        }
-    }   
-    return Point2f(0,binary.rows/2);
-}
-
-Point2f get_top_point(Mat binary){
-    for (int i=100; i < binary.rows; i++){
-        for (int j=300; j < binary.cols; j++){
-            if (binary.at<uchar>(i, j)) {
-                printf("Top - X: %d, Y:%d\n", i,j);
-                return Point2f(j,i);
-            }
-        }
-    }
-    return Point2f(binary.cols/2,0);
-}
-
-Point2f * get_right_bottom_left(Mat binary){
-    // start on the left
-    Point2f * corners = (Point2f*)malloc(sizeof(Point2f)*4); 
-    corners[0] = get_right_point(binary);
-    corners[1] = get_left_point(binary);
-    corners[2]= get_bottom_point(binary);
-    corners[3]= get_top_point(binary);
-    //  check that the next 2 clusters are roughly the standard distance away
-    // if not then the next cluster is the starter
-    // do the same for right and bot
-    Mat coloured;
-    cvtColor(binary, coloured, CV_GRAY2BGR);
-    circle(coloured, corners[0], 50, CV_RGB(0,0,255), 0);
-    circle(coloured, corners[1], 50, CV_RGB(0,255,0), 0);
-    circle(coloured, corners[2], 50, CV_RGB(255,0,0), 0);
-    circle(coloured, corners[3], 50, CV_RGB(200,200,200), 0);
-    imshow("Lab3", coloured);
-    waitKey();
-    return corners;
-}
 
 Mat sharpen_image(Mat image){
     Mat sharpened = image.clone();
@@ -305,12 +256,12 @@ int main( int argc, char** argv )
             cout << "Filename: " << filename << endl;
             image = imread(filename, CV_LOAD_IMAGE_COLOR);
             border_dots = get_border_dots(image);
-            Point2f * points = get_right_bottom_left(border_dots);
+            Point2f * points = get_border(border_dots, 120, 20);
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
             //            count_pixels_in_rows(sharpened, templates);
-            //                       imshow("Lab3", sharpened);
-            //                        waitKey();
+            imshow("Lab3", sharpened);
+            waitKey();
         }
     }
     return 0;
