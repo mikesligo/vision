@@ -16,7 +16,6 @@ bool in_image_bounds(Mat& image, int x, int y){
 
 void delete_pixel_and_neighbours(Mat& binary, int x, int y){
     if (!binary.at<uchar>(x, y)) return;
-    //printf("X is %d, Y is %d\n", x, y);
     binary.at<uchar>(x, y) = 0;
     if (in_image_bounds(binary, x+1,y)){
         delete_pixel_and_neighbours(binary, x+1, y);
@@ -91,7 +90,6 @@ Point2f * get_border(Mat binary, int radius, int min){
         for (int col=border; col < binary.cols-border-min; col++){
             if (binary.at<uchar>(row,col)){
                 points.push_back(Point2f(col,row));
-                //printf("row: %d, col: %d, min: %d, binary.rows: %d, binary.cols:%d\n", row, col, min, binary.rows, binary.cols);
             }
         }
     }
@@ -111,13 +109,6 @@ Point2f * get_border(Mat binary, int radius, int min){
         }
     }
     Point2f * border_points = get_border_rigt_bottom_left_top(valid_points);
-    circle(binary, border_points[0], 50, CV_RGB(0,0,255), 0);
-    circle(binary, border_points[1], 50, CV_RGB(0,0,255), 0);
-    circle(binary, border_points[2], 50, CV_RGB(0,0,255), 0);
-    circle(binary, border_points[3], 50, CV_RGB(0,0,255), 0);
-    imshow("Lab3", binary);
-    waitKey();
-
     return border_points;
 }
 
@@ -145,9 +136,7 @@ Mat get_border_dots(Mat image){
     threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
     remove_large_clusters(binary, 20);
-    
-//    imshow("Lab3", binary);
- //   waitKey();
+
     return binary;
 }
 
@@ -256,7 +245,7 @@ int main( int argc, char** argv )
     assert((argc >= 2) && "Not enough arguments");
     namedWindow("Lab3", CV_NORMAL );
 
-    for (int i = 20; i < argc; i++){
+    for (int i = 1; i < argc; i++){
         filename = argv[i];
         if (filename.substr(0,14).compare("pageimagefiles") != 0){
             cout << "Filename: " << filename << endl;
@@ -265,7 +254,7 @@ int main( int argc, char** argv )
             Point2f * points = get_border(border_dots, 200, 40);
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
-            //            count_pixels_in_rows(sharpened, templates);
+            count_pixels_in_rows(sharpened, templates);
             imshow("Lab3", sharpened);
             waitKey();
         }
