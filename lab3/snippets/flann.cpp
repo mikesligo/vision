@@ -20,7 +20,7 @@ int main( int argc, char** argv )
 
   if( !img_1.data || !img_2.data )
   { std::cout<< " --(!) Error reading images " << std::endl; return -1; }
-
+ << endl
   //-- Step 1: Detect the keypoints using SURF Detector
   int minHessian = 400;
 
@@ -60,9 +60,10 @@ int main( int argc, char** argv )
   //-- PS.- radiusMatch can also be used here.
   std::vector< DMatch > good_matches;
 
-  for( int i = 0; i < descriptors_1.rows; i++ )
-  { if( matches[i].distance <= 2*min_dist )
-    { good_matches.push_back( matches[i]); }
+  for( int i = 0; i < descriptors_1.rows; i++ ) { 
+      if( matches[i].distance <= 2*min_dist ) { 
+        good_matches.push_back( matches[i]); 
+    }
   }
 
   //-- Draw only "good" matches

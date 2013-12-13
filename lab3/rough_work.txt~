@@ -41,3 +41,5 @@ could look for any 3 image points which are a certain proportion or width from e
 ok will do all that later, for the time being have perspective transformation working perfectly basically for the first few images
 
 now onto sift, using the flann.cpp file can't really distinguish, however the output is blurred and the input is crisp, so going to try and sharpen the output and blur the input - sharpening worked perfectly!
+
+splitting them up simply not as good as I would expect

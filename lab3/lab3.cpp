@@ -196,71 +196,21 @@ Mat sharpen_image(Mat image){
     return sharpened;
 }
 
-Mat find_closest_match(Mat image, vector<string> templates){
-
-    //-- Step 1: Detect the keypoints using SURF Detector
-    Rect roi(0,0,image.cols,image.rows);
-
-    Mat tmpl = imread(templates[0], CV_LOAD_IMAGE_COLOR)(roi);
-
-    Mat img_1, img_2;
-    vector<KeyPoint> keypoints_1, keypoints_2;
-    int divisor = 2;
-    int increment = image.cols/divisor;
-    int max = image.cols - image.cols%divisor;
-    Mat img_matches = Mat(image.cols/divisor, image.rows, CV_32F);
-
-    printf("size: %d, %d\n", image.cols, image.rows);
-    for (int cols=0; cols < max; cols += increment){
-        Rect section (cols, 0, increment, image.rows);
-        img_1 = image(section);
-        img_2 = tmpl(section);
-        int minHessian = 400;
-    vector<DMatch> good_matches;
-
-        SurfFeatureDetector detector( minHessian );
-
-        detector.detect( img_1, keypoints_1 );
-        detector.detect( img_2, keypoints_2 );
-
-        //-- Step 2: Calculate descriptors (feature vectors)
-        SurfDescriptorExtractor extractor;
-
-        Mat descriptors_1, descriptors_2;
-
-        extractor.compute( img_1, keypoints_1, descriptors_1 );
-        extractor.compute( img_2, keypoints_2, descriptors_2 );
-
-        //-- Step 3: Matching descriptor vectors using FLANN matcher
-        FlannBasedMatcher matcher;
-        vector<DMatch> matches;
-        matcher.match(descriptors_1, descriptors_2, matches );
-
-        double max_dist = 0; double min_dist = 100;
-
-        //-- Quick calculation of max and min distances between keypoints
-        for( int i = 0; i < descriptors_1.rows; i++ ) { 
-            double dist = matches[i].distance;
-            if( dist < min_dist ) min_dist = dist;
-            if( dist > max_dist ) max_dist = dist;
-        }
-
-        //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
-        //-- PS.- radiusMatch can also be used here.
-
-        for( int i = 0; i < descriptors_1.rows; i++ ){ 
-            if(matches[i].distance <= 2 * min_dist ){ 
-                good_matches.push_back(matches[i]); 
-            }
-        }
-        drawMatches( img_1, keypoints_1, img_2, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-           vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-        imshow("Lab3", img_matches);
+void count_lines(Mat image, vector<string> templates){
+    
+    Mat tmpl = imread(templates[0], CV_LOAD_IMAGE_COLOR);
+    int divisor = 20;
+    int max = image.rows - image.rows%divisor;
+    int increment = image.rows/divisor;
+    for (int row=0; row < max; row += increment){
+        Rect roi(0, row, image.cols, row+increment);
+        Mat cropped_img = image(roi);
+        Mat cropped_tmpl = tmpl(roi);
+        imshow("Lab3", cropped_img);
         waitKey();
-
+        imshow("Lab3", cropped_tmpl);
+        waitKey();
     }
-    //cout << "Matches: " << good_matches.size() << endl;
-    return img_matches;
 }
 
 int main( int argc, char** argv )
@@ -289,8 +239,8 @@ int main( int argc, char** argv )
             Point2f * points = get_right_bottom_left(houghed);
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
-            compared = find_closest_match(sharpened, templates);
-           imshow("Lab3", compared);
+            count_lines(sharpened, templates);
+            imshow("Lab3", sharpened);
             waitKey();
         }
     }
