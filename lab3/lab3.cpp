@@ -197,20 +197,36 @@ Mat sharpen_image(Mat image){
 }
 
 void count_lines(Mat image, vector<string> templates){
-    
+    int difference =0;
     Mat tmpl = imread(templates[0], CV_LOAD_IMAGE_COLOR);
-    int divisor = 20;
+    int divisor = 4;
     int max = image.rows - image.rows%divisor;
     int increment = image.rows/divisor;
     for (int row=0; row < max; row += increment){
-        Rect roi(0, row, image.cols, row+increment);
+        Rect roi(0, row, image.cols, increment);
         Mat cropped_img = image(roi);
         Mat cropped_tmpl = tmpl(roi);
-        imshow("Lab3", cropped_img);
+
+        Mat grey, binary;
+        int black_1, black_2;
+
+        cvtColor(cropped_img, grey, CV_BGR2GRAY);
+        threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+        black_1 = binary.rows*binary.cols - countNonZero(binary);
+        imshow("Lab3", binary);
         waitKey();
-        imshow("Lab3", cropped_tmpl);
+        
+        namedWindow("Lab3_1", CV_WINDOW_AUTOSIZE);
+        cvtColor(cropped_tmpl, grey, CV_BGR2GRAY);
+        threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+        black_2 = binary.rows*binary.cols - countNonZero(binary);
+        imshow("Lab3_1", binary);
         waitKey();
+
+        printf("Difference: %d\n", black_1-black_2);
+        difference = difference + (black_1-black_2);
     }
+    printf("Final difference: %d\n", difference);
 }
 
 int main( int argc, char** argv )
@@ -240,8 +256,8 @@ int main( int argc, char** argv )
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
             count_lines(sharpened, templates);
-            imshow("Lab3", sharpened);
-            waitKey();
+//            imshow("Lab3", sharpened);
+//            waitKey();
         }
     }
     return 0;
