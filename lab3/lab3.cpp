@@ -49,25 +49,25 @@ void remove_large_clusters(Mat binary, int radius){
 
 Point2f * get_border_rigt_bottom_left_top(vector<Point2f> points){
     Point2f * corners = (Point2f*)malloc(sizeof(Point2f)*4); 
-    corners[0] = points[0];
-    corners[1] = points[0];
-    corners[2] = points[0];
-    corners[3] = points[0];
+    corners[0] = points[0]; // right
+    corners[1] = points[0]; // bottom
+    corners[2] = points[0]; // left
+    corners[3] = points[0]; // top
 
     for (size_t i=0; i<points.size(); i++){
         Point2f point = points[i];
         int x = point.x;
         int y = point.y;
-        if (x > corners[0].x){
+        if (x > corners[0].x){ // right
             corners[0] = point;
         }
-        if (x < corners[1].x){
+        if (x < corners[1].x){ // bottom
             corners[1] = point;
         }
-        if (y > corners[2].y){
+        if (y > corners[2].y){ // left
             corners[2] = point;
         }
-        if (y < corners[3].y){
+        if (y < corners[3].y){ // top
             corners[3] = point;
         }
     }
@@ -75,15 +75,23 @@ Point2f * get_border_rigt_bottom_left_top(vector<Point2f> points){
 }
 
 Point2f * get_border(Mat binary, int radius, int min){
-    Mat tmp = binary.clone();
     vector<Point2f> points;
     vector<Point2f> valid_points;
-    int border = 100;
-    for (int row=border; row < tmp.rows-border-min; row++){
-        for (int col=border; col < tmp.cols-border-min; col++){
-            if (tmp.at<uchar>(row,col)){
+    Mat top_corner, right;
+    int border = 50;
+    Rect roi_top_left(0,0,250,binary.rows);
+    top_corner = binary(roi_top_left);
+    top_corner.setTo(Scalar(0,0,0));
+
+    Rect roi_right(binary.cols-300,0,300,binary.rows);
+    right = binary(roi_right);
+    right.setTo(Scalar(0,0,0));
+
+    for (int row=border; row < binary.rows-border-min; row++){
+        for (int col=border; col < binary.cols-border-min; col++){
+            if (binary.at<uchar>(row,col)){
                 points.push_back(Point2f(col,row));
-                //printf("row: %d, col: %d, min: %d, tmp.rows: %d, tmp.cols:%d\n", row, col, min, tmp.rows, tmp.cols);
+                //printf("row: %d, col: %d, min: %d, binary.rows: %d, binary.cols:%d\n", row, col, min, binary.rows, binary.cols);
             }
         }
     }
@@ -102,10 +110,13 @@ Point2f * get_border(Mat binary, int radius, int min){
             }
         }
     }
-    namedWindow("Lab3_1", CV_WINDOW_AUTOSIZE);
-    imshow("Lab3_1",binary);
-
     Point2f * border_points = get_border_rigt_bottom_left_top(valid_points);
+    circle(binary, border_points[0], 50, CV_RGB(0,0,255), 0);
+    circle(binary, border_points[1], 50, CV_RGB(0,0,255), 0);
+    circle(binary, border_points[2], 50, CV_RGB(0,0,255), 0);
+    circle(binary, border_points[3], 50, CV_RGB(0,0,255), 0);
+    imshow("Lab3", binary);
+    waitKey();
 
     return border_points;
 }
@@ -133,6 +144,10 @@ Mat get_border_dots(Mat image){
     cvtColor(only_blue_bgr, grey, CV_BGR2GRAY);
     threshold(grey, binary, 200, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
+    remove_large_clusters(binary, 20);
+    
+//    imshow("Lab3", binary);
+ //   waitKey();
     return binary;
 }
 
@@ -154,9 +169,6 @@ Mat get_border_rectangle(Mat dots){
 }
 
 Mat perspective_transformation(Mat image, Point2f * src){
-
-    // apply standard transform
-
 
     Mat matrix, transformed;
 
@@ -242,15 +254,15 @@ int main( int argc, char** argv )
     }
 
     assert((argc >= 2) && "Not enough arguments");
-    namedWindow("Lab3", CV_WINDOW_AUTOSIZE );
+    namedWindow("Lab3", CV_NORMAL );
 
-    for (int i = 1; i < argc; i++){
+    for (int i = 20; i < argc; i++){
         filename = argv[i];
         if (filename.substr(0,14).compare("pageimagefiles") != 0){
             cout << "Filename: " << filename << endl;
             image = imread(filename, CV_LOAD_IMAGE_COLOR);
             border_dots = get_border_dots(image);
-            Point2f * points = get_border(border_dots, 120, 20);
+            Point2f * points = get_border(border_dots, 200, 40);
             transformed = perspective_transformation(image, points);
             sharpened = sharpen_image(transformed);
             //            count_pixels_in_rows(sharpened, templates);
