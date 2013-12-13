@@ -114,16 +114,18 @@ Point2f * get_border(Mat binary, int radius, int min){
 
 Mat get_border_dots(Mat image){
     Mat only_blue = image.clone();
-    Mat hls, grey, binary, no_clusters, only_blue_bgr;
-
+    Mat hls, hsv,grey, binary, no_clusters, only_blue_bgr;
+    
     cvtColor(image, hls, CV_BGR2HLS);
+    cvtColor(image, hsv, CV_BGR2HSV);
 
     for (int row = 0; row < hls.rows; row ++){
         for (int col = 0; col < hls.cols; col ++){
             int hue = hls.at<Vec3b>(row,col)[0];
             int lum = hls.at<Vec3b>(row,col)[1];
             int sat = hls.at<Vec3b>(row,col)[2];
-            if ( hue  <= 110 && hue >= 90 && sat >= 50 && lum <= 160){
+            int val = hsv.at<Vec3b>(row,col)[2];
+            if ( hue  <= 110 && hue >= 90 && sat >= 50 && lum <= 160 && val > 120){
             } else {
                 for (int channels = 0; channels < only_blue.channels(); channels ++){
                     only_blue.at<Vec3b>(row,col)[channels] = 0;
@@ -175,7 +177,7 @@ Mat perspective_transformation(Mat image, Point2f * src){
     circle(transformed, dst[2], 50, CV_RGB(255,0,0), 0);
     circle(transformed, dst[3], 50, CV_RGB(200,200,200), 0);
 
-    Rect roi(8,8, 398,589);
+    Rect roi(0,0, 407,597);
     Mat cropped = transformed(roi);
     return cropped;
 }
@@ -226,7 +228,6 @@ void count_pixels_in_rows(Mat image, vector<string> templates){
     namedWindow("Lab3_2", CV_WINDOW_AUTOSIZE);
     imshow("Lab3", image);
     imshow("Lab3_2", tmpl);
-    waitKey();
 }
 
 int main( int argc, char** argv )
